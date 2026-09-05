@@ -48,6 +48,10 @@
   const PIPES_PER_STARDUST = 25;
   const AD_EVERY_N_RUNS = 3;
   const AD_COUNTDOWN_SEC = 5;
+  const REWARD_STARDUST_AMOUNT = 1;
+  const REWARD_STARDUST_DAILY_MAX = 3;
+  const REWARD_STARDUST_KEY = "skyHopRewardedStardustDay";
+  const REVIVE_INVULN_FRAMES = 90;
   const LB_MAX = 8;
   const SPECIAL_CURRENCY_NAME = "Stardust";
   const RARITY_ORDER = { legendary: 0, epic: 1, rare: 2, common: 3 };
@@ -980,6 +984,11 @@
   let skyOffset = 0;
   let flash = 0;
   let overTimer = 0;
+  let reviveUsedThisRun = false;
+  let reviveAvailable = false;
+  let runRewardsSettled = false;
+  let invulnFrames = 0;
+  let overUi = { revive: null, retry: null };
 
   // Palette — dusk teal / coral hop
   const C = {
@@ -2072,6 +2081,9 @@
   const adOverlay = document.getElementById("ad-overlay");
   const adCountdown = document.getElementById("ad-countdown");
   const adContinue = document.getElementById("ad-continue");
+  const adLabelEl = document.getElementById("ad-label");
+  const adTitleEl = document.getElementById("ad-title");
+  const adSubtitleEl = document.getElementById("ad-subtitle");
   const checkoutModal = document.getElementById("checkout-modal");
   const checkoutItemEl = document.querySelector(".checkout-item");
   const checkoutPriceEl = document.querySelector(".checkout-price");
@@ -2364,6 +2376,31 @@
       `<span class="shop-section-title">Stardust Packs</span>` +
       `<span class="shop-section-count">${STARDUST_PACKS.length} packs</span>`;
     shopGrid.appendChild(intro);
+
+    const freeCard = document.createElement("article");
+    freeCard.className = "stardust-reward-card";
+    const left = rewardedStardustRemaining();
+    freeCard.innerHTML =
+      "<h4>Free · Watch ad</h4>" +
+      "<p>+" +
+      REWARD_STARDUST_AMOUNT +
+      " Stardust · " +
+      left +
+      " / " +
+      REWARD_STARDUST_DAILY_MAX +
+      " left today</p>";
+    const freeBtn = document.createElement("button");
+    freeBtn.type = "button";
+    freeBtn.className = "promo-btn stardust-reward-btn";
+    freeBtn.textContent = left > 0 ? "Watch · +" + REWARD_STARDUST_AMOUNT + " Stardust" : "Daily limit reached";
+    freeBtn.disabled = left <= 0 || adBlocking;
+    freeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      offerWatchStardust();
+    });
+    freeCard.appendChild(freeBtn);
+    shopGrid.appendChild(freeCard);
+
     const wrap = document.createElement("div");
     wrap.className = "stardust-packs";
     shopGrid.appendChild(wrap);
@@ -3115,18 +3152,70 @@
   window.addEventListener("pointerdown", resumeMusicOnGesture, { once: false, passive: true });
   window.addEventListener("keydown", resumeMusicOnGesture, { once: false });
 
-  function showAdThen(callback) {
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function getRewardedStardustState() {
+    const day = todayKey();
+    let raw = {};
+    try {
+      raw = JSON.parse(localStorage.getItem(REWARD_STARDUST_KEY) || "{}") || {};
+    } catch (_) {
+      raw = {};
+    }
+    if (raw.day !== day) return { day, count: 0 };
+    return { day, count: Number(raw.count) || 0 };
+  }
+
+  function rewardedStardustRemaining() {
+    return Math.max(0, REWARD_STARDUST_DAILY_MAX - getRewardedStardustState().count);
+  }
+
+  function canWatchStardustAd() {
+    return rewardedStardustRemaining() > 0;
+  }
+
+  function grantRewardedStardust() {
+    const s = getRewardedStardustState();
+    if (s.count >= REWARD_STARDUST_DAILY_MAX) return false;
+    stardust += REWARD_STARDUST_AMOUNT;
+    persistStardust();
+    localStorage.setItem(
+      REWARD_STARDUST_KEY,
+      JSON.stringify({ day: s.day, count: s.count + 1 })
+    );
+    return true;
+  }
+
+  /**
+   * Simulated ad (interstitial or rewarded). Swap body for AdMob/IronSource later.
+   * opts: { title, subtitle, label, kind: "interstitial"|"rewarded", resetRunAdCounter }
+   */
+  function showAdThen(callback, opts) {
+    opts = opts || {};
+    const kind = opts.kind || "interstitial";
     adBlocking = true;
     pendingStartAfterAd = false;
+    if (adLabelEl) adLabelEl.textContent = opts.label || (kind === "rewarded" ? "Rewarded Ad" : "Advertisement");
+    if (adTitleEl) adTitleEl.textContent = opts.title || (kind === "rewarded" ? "Sky Hop · Rewarded" : "Sky Hop · Simulated Ad");
+    if (adSubtitleEl) {
+      adSubtitleEl.textContent =
+        opts.subtitle ||
+        (kind === "rewarded"
+          ? "Watch to claim your reward."
+          : "Thanks for supporting free play.");
+    }
     adOverlay.classList.remove("hidden");
     adOverlay.setAttribute("aria-hidden", "false");
     adContinue.disabled = true;
     let left = AD_COUNTDOWN_SEC;
-    adCountdown.textContent = `Continue in ${left}…`;
+    adCountdown.textContent = "Continue in " + left + "…";
     const tick = setInterval(() => {
       left--;
       if (left > 0) {
-        adCountdown.textContent = `Continue in ${left}…`;
+        adCountdown.textContent = "Continue in " + left + "…";
       } else {
         clearInterval(tick);
         adCountdown.textContent = "Ready";
@@ -3140,8 +3229,10 @@
       adOverlay.classList.add("hidden");
       adOverlay.setAttribute("aria-hidden", "true");
       adBlocking = false;
-      runsSinceAd = 0;
-      persistRuns();
+      if (opts.resetRunAdCounter !== false && kind === "interstitial") {
+        runsSinceAd = 0;
+        persistRuns();
+      }
       if (typeof callback === "function") callback();
     };
     adContinue.addEventListener("click", onContinue);
@@ -3149,6 +3240,131 @@
 
   function needsAdGate() {
     return !adsRemoved && runsSinceAd >= AD_EVERY_N_RUNS;
+  }
+
+  function canvasPointFromEvent(e) {
+    if (!e) return null;
+    const src = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e;
+    if (typeof src.clientX !== "number") return null;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    return {
+      x: ((src.clientX - rect.left) / rect.width) * W,
+      y: ((src.clientY - rect.top) / rect.height) * H,
+    };
+  }
+
+  function hitRect(pt, r) {
+    return pt && r && pt.x >= r.x && pt.x <= r.x + r.w && pt.y >= r.y && pt.y <= r.y + r.h;
+  }
+
+  function finalizeRunIfNeeded() {
+    if (runRewardsSettled) return;
+    runRewardsSettled = true;
+    reviveAvailable = false;
+
+    coinsEarnedThisRun = Math.floor(runDistance / PIXELS_PER_COIN);
+    stardustEarnedThisRun = Math.floor(score / PIPES_PER_STARDUST);
+    if (coinsEarnedThisRun > 0) {
+      coins += coinsEarnedThisRun;
+      persistCoins();
+    }
+    if (stardustEarnedThisRun > 0) {
+      stardust += stardustEarnedThisRun;
+      persistStardust();
+    }
+    if (coinsEarnedThisRun <= 0 && stardustEarnedThisRun <= 0) {
+      syncCoinHUD();
+    }
+
+    if (!adsRemoved) {
+      runsSinceAd += 1;
+      persistRuns();
+      if (needsAdGate()) {
+        showAdThen(() => {
+          syncPromoVisibility();
+        });
+      }
+    }
+
+    updateLeaderboardsOnScore(score);
+
+    const equipped = getEquippedSkin();
+    const legendaryOk =
+      !!equipped &&
+      equipped.rarity === "legendary" &&
+      ownedSkins.includes(equipped.id) &&
+      score >= 8;
+    updateChallengesOnRunEnd({
+      score,
+      coins: coinsEarnedThisRun,
+      distance: Math.floor(runDistance),
+      legendaryOk,
+    });
+
+    syncPromoVisibility();
+  }
+
+  function applyRevive() {
+    reviveUsedThisRun = true;
+    reviveAvailable = false;
+    state = STATE.PLAYING;
+    invulnFrames = REVIVE_INVULN_FRAMES;
+    let targetY = H / 2 - 20;
+    for (const p of pipes) {
+      if (p.x + PIPE_WIDTH >= bird.x - 20) {
+        targetY = p.top + p.gap * 0.5;
+        break;
+      }
+    }
+    const floor = H - GROUND_H - BIRD_R - 4;
+    bird.y = Math.max(BIRD_R + 8, Math.min(floor, targetY));
+    bird.vy = FLAP * 0.45;
+    bird.rot = -0.35;
+    flash = 8;
+    overTimer = 0;
+    syncPromoVisibility();
+    playSfx("ui");
+    vibratePulse(15);
+  }
+
+  function offerRevive() {
+    if (!reviveAvailable || reviveUsedThisRun || adBlocking) return;
+    showAdThen(
+      () => {
+        applyRevive();
+      },
+      {
+        kind: "rewarded",
+        label: "Rewarded Ad",
+        title: "Watch to Revive",
+        subtitle: "Keep your score — one revive per run.",
+        resetRunAdCounter: false,
+      }
+    );
+  }
+
+  function offerWatchStardust() {
+    if (adBlocking) return;
+    if (!canWatchStardustAd()) return;
+    showAdThen(
+      () => {
+        if (grantRewardedStardust()) {
+          playSfx("ui");
+          vibratePulse(12);
+          if (typeof renderShop === "function" && shopModal && !shopModal.classList.contains("hidden")) {
+            renderShop();
+          }
+        }
+      },
+      {
+        kind: "rewarded",
+        label: "Rewarded Ad",
+        title: "Watch for Stardust",
+        subtitle: "+" + REWARD_STARDUST_AMOUNT + " Stardust · " + rewardedStardustRemaining() + " left today after this",
+        resetRunAdCounter: false,
+      }
+    );
   }
 
   // Ensure boards exist / rollover on load
@@ -3175,6 +3391,11 @@
     runDistance = 0;
     coinsEarnedThisRun = 0;
     stardustEarnedThisRun = 0;
+    reviveUsedThisRun = false;
+    reviveAvailable = false;
+    runRewardsSettled = false;
+    invulnFrames = 0;
+    overUi = { revive: null, retry: null };
     trailPoints = [];
     bird.x = BIRD_X;
     bird.y = H / 2 - 20;
@@ -3211,7 +3432,7 @@
     syncPromoVisibility();
   }
 
-  function flap() {
+  function flap(e) {
     resumeMusicOnGesture();
     if (adBlocking) return;
     if (!shopModal.classList.contains("hidden")) return;
@@ -3222,6 +3443,12 @@
     if (!checkoutModal.classList.contains("hidden")) return;
     if (state === STATE.OVER) {
       if (overTimer > 20) {
+        const pt = canvasPointFromEvent(e);
+        if (reviveAvailable && !reviveUsedThisRun && hitRect(pt, overUi.revive)) {
+          offerRevive();
+          return;
+        }
+        finalizeRunIfNeeded();
         resetGame();
       }
       return;
@@ -3267,13 +3494,13 @@
       if (n.classList && (n.classList.contains("frame-rail") || n.classList.contains("frame-nav"))) return;
     }
     e.preventDefault();
-    flap();
+    flap(e);
   }
 
   function onKey(e) {
     if (e.code === "Space" || e.code === "ArrowUp" || e.key === " ") {
       e.preventDefault();
-      flap();
+      flap(e);
     }
     if (e.code === "Escape") {
       closeShop();
@@ -3346,15 +3573,29 @@
       spawnPipe(lastX + PIPE_SPACING);
     }
 
+    if (invulnFrames > 0) invulnFrames--;
+
     const floor = H - GROUND_H - BIRD_R + 2;
-    if (bird.y + BIRD_R >= floor || bird.y - BIRD_R <= 0) {
-      die();
-    } else {
-      for (const p of pipes) {
-        if (hitPipe(p)) {
-          die();
-          break;
+    if (invulnFrames <= 0) {
+      if (bird.y + BIRD_R >= floor || bird.y - BIRD_R <= 0) {
+        die();
+      } else {
+        for (const p of pipes) {
+          if (hitPipe(p)) {
+            die();
+            break;
+          }
         }
+      }
+    } else {
+      // Soft clamp while invulnerable after revive
+      if (bird.y + BIRD_R >= floor) {
+        bird.y = floor - BIRD_R;
+        bird.vy = Math.min(bird.vy, 0);
+      }
+      if (bird.y - BIRD_R <= 0) {
+        bird.y = BIRD_R;
+        bird.vy = Math.max(bird.vy, 0);
       }
     }
 
@@ -3385,45 +3626,15 @@
     playSfx("death");
     vibratePulse([30, 40, 30]);
 
+    // Preview earnings on panel; settle on retry / second death
     coinsEarnedThisRun = Math.floor(runDistance / PIXELS_PER_COIN);
     stardustEarnedThisRun = Math.floor(score / PIPES_PER_STARDUST);
-    if (coinsEarnedThisRun > 0) {
-      coins += coinsEarnedThisRun;
-      persistCoins();
-    }
-    if (stardustEarnedThisRun > 0) {
-      stardust += stardustEarnedThisRun;
-      persistStardust();
-    }
-    if (coinsEarnedThisRun <= 0 && stardustEarnedThisRun <= 0) {
-      syncCoinHUD();
-    }
 
-    if (!adsRemoved) {
-      runsSinceAd += 1;
-      persistRuns();
-      // Show interstitial after the run ends (not on next start)
-      if (needsAdGate()) {
-        showAdThen(() => {
-          syncPromoVisibility();
-        });
-      }
+    if (!reviveUsedThisRun) {
+      reviveAvailable = true;
+    } else {
+      finalizeRunIfNeeded();
     }
-
-    updateLeaderboardsOnScore(score);
-
-    const equipped = getEquippedSkin();
-    const legendaryOk =
-      !!equipped &&
-      equipped.rarity === "legendary" &&
-      ownedSkins.includes(equipped.id) &&
-      score >= 8;
-    updateChallengesOnRunEnd({
-      score,
-      coins: coinsEarnedThisRun,
-      distance: Math.floor(runDistance),
-      legendaryOk,
-    });
 
     syncPromoVisibility();
   }
@@ -4059,10 +4270,12 @@
     }
 
     if (state === STATE.OVER) {
-      const pw = 240;
-      const ph = 220;
+      const showRevive = reviveAvailable && !reviveUsedThisRun;
+      const pw = 250;
+      const ph = showRevive ? 268 : 220;
       const px = (W - pw) / 2;
-      const py = H * 0.26;
+      const py = H * 0.22;
+      overUi = { revive: null, retry: null };
       ctx.fillStyle = C.panel;
       roundRect(px, py, pw, ph, 14);
       ctx.fill();
@@ -4078,26 +4291,44 @@
 
       ctx.font = "16px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillText(`Score  ${score}`, W / 2, py + 64);
-      ctx.fillText(`Best   ${best}`, W / 2, py + 86);
+      ctx.fillText("Score  " + score, W / 2, py + 64);
+      ctx.fillText("Best   " + best, W / 2, py + 86);
 
       ctx.fillStyle = C.coin;
-      ctx.fillText(`Coins +${coinsEarnedThisRun}`, W / 2, py + 112);
+      ctx.fillText("Coins +" + coinsEarnedThisRun, W / 2, py + 112);
       ctx.fillStyle = C.stardust || C.gem;
-      ctx.fillText(`Stardust +${stardustEarnedThisRun}`, W / 2, py + 134);
+      ctx.fillText("Stardust +" + stardustEarnedThisRun, W / 2, py + 134);
 
       ctx.font = "12px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.fillText(`Bag ${coins} · Stardust ${stardust}`, W / 2, py + 158);
+      ctx.fillText("Bag " + coins + " · Stardust " + stardust, W / 2, py + 156);
 
       if (overTimer > 20) {
+        let yBtn = py + 178;
+        if (showRevive) {
+          const rw = 200;
+          const rh = 36;
+          const rx = (W - rw) / 2;
+          const ry = yBtn;
+          overUi.revive = { x: rx, y: ry, w: rw, h: rh };
+          ctx.fillStyle = "rgba(192,132,252,0.95)";
+          roundRect(rx, ry, rw, rh, 10);
+          ctx.fill();
+          ctx.font = "600 14px Segoe UI, system-ui, sans-serif";
+          ctx.fillStyle = "#1e1030";
+          ctx.fillText("Watch · Revive", W / 2, ry + 24);
+          yBtn = ry + rh + 14;
+        }
         const pulse = 0.7 + Math.sin(frames * 0.12) * 0.3;
         ctx.globalAlpha = pulse;
         ctx.font = "600 15px Segoe UI, system-ui, sans-serif";
         ctx.fillStyle = "#fff";
-        ctx.fillText("Tap to retry", W / 2, py + 190);
+        ctx.fillText(showRevive ? "or tap to retry" : "Tap to retry", W / 2, yBtn + 8);
         ctx.globalAlpha = 1;
+        overUi.retry = { x: px, y: yBtn - 10, w: pw, h: 36 };
       }
+
+      // Brief invuln sparkle note not needed; flash handles revive feedback
     }
   }
 
