@@ -126,34 +126,25 @@ body {
   border-radius: 0;
 }
 
-/* Stacked frame rails — reliable hit targets above canvas */
-.frame-rail {
+/* Top-left 2x2 menu on the canvas */
+.frame-nav {
   position: absolute;
+  top: 10px;
+  left: 10px;
   z-index: 50;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto auto;
   gap: 8px;
   pointer-events: auto;
 }
 
-.frame-rail-left {
-  top: 10px;
-  left: 10px;
-  align-items: flex-start;
-}
-
-.frame-rail-center {
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  align-items: center;
-}
-
-.frame-rail .hud-btn,
-.frame-rail .frame-btn {
+.frame-nav .hud-btn,
+.frame-nav .frame-btn {
   position: static;
   transform: none;
-  max-width: 120px;
+  min-width: 88px;
+  max-width: 110px;
+  justify-self: start;
 }
 
 #btn-shop,
@@ -188,22 +179,25 @@ body {
 }
 
 /* Hide frame nav while playing; show on ready/over */
-body.playing .frame-rail-center,
+body.playing #btn-rank,
+body.playing #btn-challenges,
 body.playing #btn-remove-ads {
   opacity: 0;
   pointer-events: none;
 }
 
-body.ready .frame-rail-center,
+body.ready #btn-rank,
+body.ready #btn-challenges,
 body.ready #btn-remove-ads,
-body.over .frame-rail-center,
+body.over #btn-rank,
+body.over #btn-challenges,
 body.over #btn-remove-ads {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* Shop + Settings always available on ready/over; keep visible during play too for settings access? keep shop/settings always clickable */
-body.playing .frame-rail-left {
+body.playing #btn-shop,
+body.playing #btn-settings {
   opacity: 1;
   pointer-events: auto;
 }

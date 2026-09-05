@@ -1190,10 +1190,11 @@
       ambient: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
     };
     const bMotif = bassMotif[style] || bassMotif.default;
+    const motif = motifs[style] || motifs.arcade || motifs.tropical;
 
     for (let i = 0; i < steps; i++) {
       const mi = i % 16;
-      const octaveBoost = i >= 16 && (style === "chip" || style === "playful" || style === "crystal") ? 12 : 0;
+      const octaveBoost = i >= 16 && (style === "chip" || style === "playful" || style === "crystal" || String(style).startsWith("arcade")) ? 12 : 0;
 
       // Lead melody from motif (skip rests)
       const md = motif[mi];
@@ -1499,19 +1500,24 @@
   }
 
   function syncBackgroundMusic() {
-    // Shop music tab uses preview; otherwise BGM on ready/play/over
-    if (!shopModal.classList.contains("hidden") && shopTab === "music") {
-      startMusicTrack(shopPreviewMusicId || equippedMusicId, true);
-      return;
-    }
-    if (musicMuted) {
-      stopMusicLoop();
-      return;
-    }
-    if (state === STATE.READY || state === STATE.PLAYING || state === STATE.OVER) {
-      startMusicTrack(equippedMusicId, false);
-    } else {
-      stopMusicLoop();
+    try {
+      // Shop music tab uses preview; otherwise BGM on ready/play/over
+      if (shopModal && !shopModal.classList.contains("hidden") && shopTab === "music") {
+        startMusicTrack(shopPreviewMusicId || equippedMusicId, true);
+        return;
+      }
+      if (musicMuted) {
+        stopMusicLoop();
+        return;
+      }
+      if (state === STATE.READY || state === STATE.PLAYING || state === STATE.OVER) {
+        startMusicTrack(equippedMusicId, false);
+      } else {
+        stopMusicLoop();
+      }
+    } catch (err) {
+      console.warn("music sync failed", err);
+      try { stopMusicLoop(); } catch (_) {}
     }
   }
 
@@ -3187,7 +3193,7 @@
       ) {
         return;
       }
-      if (n.classList && n.classList.contains("frame-rail")) return;
+      if (n.classList && (n.classList.contains("frame-rail") || n.classList.contains("frame-nav"))) return;
     }
     e.preventDefault();
     flap();

@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Sky Hop</title>
-  <link rel="stylesheet" href="style.css?v=fix8" />
+  <link rel="stylesheet" href="style.css?v=fix9" />
 </head>
 <body>
   <div id="app">
@@ -25,16 +25,14 @@
           </div>
         </div>
 
-        <!-- HUD above canvas in DOM + z-index so taps aren't eaten by the game -->
-        <div class="frame-rail frame-rail-left" aria-label="Shop and settings">
+        <!-- Top nav grid on the canvas (no overlapping rails) -->
+        <div class="frame-nav" aria-label="Game menu">
           <button type="button" id="btn-shop" class="hud-btn frame-btn" aria-label="Open shop">Shop</button>
-          <button type="button" id="btn-settings" class="hud-btn frame-btn frame-btn-settings" aria-label="Open settings" onclick="window.__skyHopOpenSettings && window.__skyHopOpenSettings(event)">Settings</button>
-        </div>
-        <button type="button" id="btn-remove-ads" class="hud-btn frame-btn frame-btn-remove" aria-label="Open remove ads">No Ads</button>
-        <div class="frame-rail frame-rail-center" aria-label="Rank and challenges">
           <button type="button" id="btn-rank" class="hud-btn frame-btn frame-btn-rank" aria-label="Open ranks">★ Rank</button>
+          <button type="button" id="btn-settings" class="hud-btn frame-btn frame-btn-settings" aria-label="Open settings" onclick="window.__skyHopOpenSettings && window.__skyHopOpenSettings(event)">Settings</button>
           <button type="button" id="btn-challenges" class="hud-btn frame-btn frame-btn-challenges" aria-label="Open challenges">Challenges</button>
         </div>
+        <button type="button" id="btn-remove-ads" class="hud-btn frame-btn frame-btn-remove" aria-label="Open remove ads">No Ads</button>
       </div>
     </div>
   </div>
@@ -212,6 +210,6 @@
     </div>
   </div>
 
-  <script src="game.js?v=fix8"></script>
+  <script src="game.js?v=fix9"></script>
 </body>
 </html>
