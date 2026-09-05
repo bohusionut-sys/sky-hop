@@ -671,27 +671,27 @@
   // --- Music (~20) — one track per skin, same ids/names/pricing ---
   // Procedural Web Audio loops; vibe drives timbre / rhythm (no external files).
   const MUSIC_VIBES = {
-    // One distinct identity per skin: unique style + bpm + wave + root + groove
-    coral: { style: "tropical", bpm: 118, root: 196, wave: "triangle", brightness: 0.78, attack: false },
-    neon: { style: "synth", bpm: 128, root: 110, wave: "sawtooth", brightness: 0.92, attack: true },
-    bone: { style: "hollow", bpm: 92, root: 98, wave: "triangle", brightness: 0.48, attack: false },
-    infernal: { style: "rumble", bpm: 148, root: 73, wave: "sawtooth", brightness: 0.7, attack: true },
-    void: { style: "ambient", bpm: 78, root: 55, wave: "sine", brightness: 0.35, attack: true },
-    mohawk: { style: "riot", bpm: 176, root: 123, wave: "square", brightness: 0.95, attack: true },
-    vampire: { style: "noir", bpm: 96, root: 82, wave: "triangle", brightness: 0.42, attack: false },
-    chrome: { style: "robot", bpm: 134, root: 165, wave: "square", brightness: 0.8, attack: false },
-    hotsauce: { style: "spicy", bpm: 158, root: 131, wave: "sawtooth", brightness: 0.9, attack: true },
-    assassin: { style: "stealth", bpm: 102, root: 98, wave: "sine", brightness: 0.4, attack: true },
-    slime: { style: "wobble", bpm: 108, root: 110, wave: "triangle", brightness: 0.68, attack: false },
-    golden: { style: "majestic", bpm: 112, root: 175, wave: "triangle", brightness: 0.82, attack: false },
-    ice: { style: "crystal", bpm: 126, root: 262, wave: "sine", brightness: 0.88, attack: false },
-    pixel: { style: "chip", bpm: 164, root: 220, wave: "square", brightness: 0.86, attack: false },
-    cosmic: { style: "ethereal", bpm: 84, root: 147, wave: "sine", brightness: 0.55, attack: false },
-    lava: { style: "tense", bpm: 142, root: 87, wave: "sawtooth", brightness: 0.78, attack: true },
-    ghost: { style: "ethereal", bpm: 72, root: 131, wave: "sine", brightness: 0.32, attack: false },
-    eel: { style: "electric", bpm: 140, root: 185, wave: "sawtooth", brightness: 0.84, attack: false },
-    candy: { style: "playful", bpm: 152, root: 247, wave: "square", brightness: 0.9, attack: false },
-    obsidian: { style: "glitch", bpm: 122, root: 65, wave: "square", brightness: 0.75, attack: true },
+    // Original youth anthems — catchy hooks / dance grooves, not covers of famous songs
+    coral: { style: "bubblegum", bpm: 124, root: 196, wave: "triangle", brightness: 0.86, attack: false },
+    neon: { style: "cyberPop", bpm: 132, root: 110, wave: "sawtooth", brightness: 0.95, attack: true },
+    bone: { style: "chillHop", bpm: 88, root: 98, wave: "triangle", brightness: 0.5, attack: false },
+    infernal: { style: "rageBeat", bpm: 150, root: 73, wave: "sawtooth", brightness: 0.82, attack: true },
+    void: { style: "nightDrive", bpm: 100, root: 55, wave: "sine", brightness: 0.45, attack: true },
+    mohawk: { style: "punkPop", bpm: 168, root: 123, wave: "square", brightness: 0.96, attack: true },
+    vampire: { style: "softRnb", bpm: 92, root: 87, wave: "triangle", brightness: 0.55, attack: false },
+    chrome: { style: "loftHouse", bpm: 126, root: 130.81, wave: "sawtooth", brightness: 0.84, attack: false },
+    hotsauce: { style: "festival", bpm: 140, root: 110, wave: "sawtooth", brightness: 0.92, attack: true },
+    assassin: { style: "phonk", bpm: 108, root: 65.41, wave: "sawtooth", brightness: 0.62, attack: true },
+    slime: { style: "wobble", bpm: 110, root: 98, wave: "triangle", brightness: 0.72, attack: false },
+    golden: { style: "anthem", bpm: 118, root: 174.61, wave: "triangle", brightness: 0.88, attack: false },
+    ice: { style: "sparkle", bpm: 128, root: 261.63, wave: "sine", brightness: 0.94, attack: false },
+    pixel: { style: "hyperpop", bpm: 156, root: 220, wave: "square", brightness: 0.93, attack: false },
+    cosmic: { style: "indieGlow", bpm: 104, root: 146.83, wave: "sine", brightness: 0.7, attack: false },
+    lava: { style: "dropRush", bpm: 145, root: 82.41, wave: "sawtooth", brightness: 0.88, attack: true },
+    ghost: { style: "bedroom", bpm: 78, root: 123.47, wave: "sine", brightness: 0.4, attack: false },
+    eel: { style: "dancePop", bpm: 128, root: 164.81, wave: "sawtooth", brightness: 0.9, attack: false },
+    candy: { style: "popHook", bpm: 120, root: 246.94, wave: "square", brightness: 0.92, attack: false },
+    obsidian: { style: "trapWave", bpm: 140, root: 55, wave: "square", brightness: 0.78, attack: true },
   };
 
   const MUSIC = SKINS.map((s) => {
@@ -1034,31 +1034,35 @@
     lydian: [0, 2, 4, 6, 7, 9, 11],
     phrygian: [0, 1, 3, 5, 7, 8, 10],
     harmonic: [0, 2, 3, 5, 7, 8, 11],
+    // Youth-catchy: bright pop pent + soft minor for hooks
+    pop: [0, 2, 4, 5, 7, 9],
+    trap: [0, 3, 5, 7, 10],
   };
 
   function styleScale(style) {
-    if (style === "chip" || style === "playful" || style === "robot" || style === "arcade" || style === "arcadeBoss") {
-      return MUSIC_SCALES.chip;
+    // Bright hooky
+    if (["popHook", "bubblegum", "sparkle", "dancePop", "anthem", "hyperpop", "candy", "playful", "tropical", "majestic"].includes(style)) {
+      return MUSIC_SCALES.pop;
     }
-    if (style === "synth" || style === "electric" || style === "arcadeAttack" || style === "arcadePunk") {
+    // Festival / cyber energy
+    if (["festival", "cyberPop", "dropRush", "loftHouse", "electric", "synth", "spicy"].includes(style)) {
       return MUSIC_SCALES.pent;
     }
-    if (style === "spicy" || style === "wobble" || style === "rumble") {
-      return MUSIC_SCALES.blues;
+    // Trap / phonk / rage
+    if (["trapWave", "phonk", "rageBeat", "wobble", "rumble"].includes(style)) {
+      return MUSIC_SCALES.trap;
     }
-    if (style === "riot" || style === "tense" || style === "glitch") {
+    // Moody youth
+    if (["nightDrive", "softRnb", "indieGlow", "bedroom", "noir", "hollow", "stealth", "ambient", "ethereal"].includes(style)) {
+      return MUSIC_SCALES.minor;
+    }
+    if (["punkPop", "riot", "glitch", "tense"].includes(style)) {
       return MUSIC_SCALES.phrygian;
     }
-    if (style === "noir" || style === "hollow" || style === "stealth" || style === "arcadeDark") {
-      return MUSIC_SCALES.dark;
+    if (["chip", "robot", "arcade", "arcadeBoss"].includes(style)) {
+      return MUSIC_SCALES.chip;
     }
-    if (style === "vampire" || style === "infernal") {
-      return MUSIC_SCALES.harmonic;
-    }
-    if (style === "tropical" || style === "majestic" || style === "regal") {
-      return MUSIC_SCALES.major;
-    }
-    if (style === "crystal" || style === "ethereal" || style === "cosmic" || style === "ambient") {
+    if (["crystal", "cosmic"].includes(style)) {
       return MUSIC_SCALES.lydian;
     }
     return MUSIC_SCALES.minor;
@@ -1163,141 +1167,154 @@
     const snare = new Array(steps).fill(0);
     const hat = new Array(steps).fill(0);
 
-    // Catchy deterministic motifs (scale degrees), keyed by style family
+    // Original catchy youth hooks (scale degrees). Short sticky phrases — NOT famous melodies.
     const motifs = {
-      // Classic arcade: fast, square, memorable 16-step hooks
-      arcade: [0, 2, 4, 7, 4, 2, 0, 4, 5, 7, 9, 7, 5, 4, 2, 0],
-      arcadePunk: [0, 0, 3, 5, 0, 3, 7, 5, 0, 5, 7, 10, 7, 5, 3, 0],
-      arcadeDark: [0, 1, 3, 5, 3, 1, 0, 5, 7, 5, 3, 1, 0, 3, 5, 7],
-      arcadeBoss: [0, 4, 7, 12, 7, 4, 0, 7, 5, 9, 12, 9, 7, 5, 4, 0],
-      arcadeAttack: [0, 0, 5, 7, 10, 7, 5, 3, 0, 5, 10, 12, 10, 7, 5, 0],
+      // Chorus-y pop: leap up, bounce home
+      popHook: [0, 2, 4, 7, 4, -1, 2, 0, 5, 4, 2, 0, 4, 2, 0, -1],
+      bubblegum: [4, 4, 2, 0, 5, 4, 2, -1, 4, 5, 7, 5, 4, 2, 0, 2],
+      sparkle: [7, 5, 4, 2, 4, 5, 7, 9, 7, 5, 4, 2, 0, 2, 4, 5],
+      dancePop: [0, -1, 4, 5, 7, -1, 5, 4, 0, -1, 4, 7, 5, 4, 2, 0],
+      anthem: [0, 4, 7, 4, 5, 7, 9, 7, 0, 4, 7, 12, 9, 7, 5, 4],
+      hyperpop: [0, 7, 4, 12, 7, 4, 0, 5, 9, 5, 12, 7, 4, 0, 7, 4],
+      cyberPop: [0, 0, 5, 7, 9, 7, 5, 0, 4, 5, 7, 12, 9, 7, 5, 4],
+      festival: [0, 4, 7, 12, 7, 4, 0, 7, 5, 9, 12, 16, 12, 9, 7, 4],
+      dropRush: [0, 0, 0, 5, 7, 7, 5, 3, 0, 5, 7, 10, 7, 5, 0, 5],
+      loftHouse: [0, -1, 2, 4, -1, 4, 5, 7, 0, -1, 4, 5, -1, 7, 5, 4],
+      trapWave: [0, -1, -1, 3, 5, -1, 7, -1, 0, -1, 5, -1, 3, -1, 7, 5],
+      phonk: [0, 0, -1, 3, 0, -1, 5, 3, 0, 0, -1, 7, 5, -1, 3, 0],
+      rageBeat: [0, 0, 3, 5, 0, 3, 7, 5, 0, 5, 8, 7, 5, 3, 0, 3],
+      punkPop: [0, 2, 0, 4, 0, 5, 4, 2, 0, 4, 7, 4, 5, 2, 0, 2],
+      softRnb: [0, -1, 2, 3, 5, -1, 3, 2, 0, -1, 5, 3, 2, -1, 0, -1],
+      nightDrive: [0, -1, 4, -1, 7, -1, 5, -1, 4, -1, 2, -1, 0, 2, 4, 5],
+      indieGlow: [0, 2, 4, -1, 5, 4, 2, 0, 4, -1, 7, 5, 4, 2, 0, -1],
+      bedroom: [0, -1, -1, 4, -1, -1, 7, -1, 5, -1, -1, 4, -1, -1, 2, -1],
+      chillHop: [0, -1, 3, -1, 5, -1, 3, 0, -1, 5, -1, 7, 5, -1, 3, -1],
+      wobble: [0, 0, 3, 3, 5, 5, 3, 0, 7, 5, 3, 0, 5, 3, 0, 0],
+      // Fallbacks kept for safety
       tropical: [0, 2, 4, 2, 5, 4, 2, 0, 0, 2, 4, 5, 4, 2, 0, -1],
       synth: [0, 0, 3, 4, 7, 4, 3, 0, 5, 4, 3, 2, 0, 2, 4, 7],
-      hollow: [0, -1, 3, -1, 5, -1, 3, -1, 0, -1, 2, -1, 5, -1, 7, -1],
-      tense: [0, 1, 3, 1, 0, 3, 5, 3, 0, 1, 3, 5, 7, 5, 3, 1],
+      arcade: [0, 2, 4, 7, 4, 2, 0, 4, 5, 7, 9, 7, 5, 4, 2, 0],
+      chip: [0, 4, 7, 4, 5, 9, 5, 4, 0, 4, 7, 12, 7, 4, 0, 4],
+      playful: [0, 2, 4, 5, 4, 2, 0, 4, 5, 7, 5, 4, 2, 0, 2, 4],
+      electric: [0, 3, 5, 7, 10, 7, 5, 3, 0, 5, 7, 12, 10, 7, 5, 0],
       glitch: [0, 7, 3, 10, 0, 5, 12, 3, 7, 0, 10, 5, 3, 12, 7, 0],
       riot: [0, 0, 3, 0, 5, 0, 3, 7, 0, 3, 5, 7, 5, 3, 0, 3],
+      ambient: [0, -1, -1, 4, -1, -1, 7, -1, 5, -1, -1, 4, -1, -1, 2, -1],
+      ethereal: [7, -1, 9, -1, 12, -1, 9, -1, 5, -1, 7, -1, 9, -1, 5, -1],
+      hollow: [0, -1, 3, -1, 5, -1, 3, -1, 0, -1, 2, -1, 5, -1, 7, -1],
       noir: [0, -1, 2, -1, 3, -1, 5, -1, 7, -1, 5, -1, 3, -1, 2, -1],
-      robot: [0, 2, 0, 4, 0, 2, 5, 2, 0, 4, 7, 4, 5, 2, 0, 2],
-      spicy: [0, 3, 5, 7, 5, 3, 0, 5, 7, 10, 7, 5, 3, 0, 5, 3],
       stealth: [0, -1, -1, 2, -1, -1, 3, -1, 5, -1, -1, 3, -1, -1, 2, -1],
-      wobble: [0, 0, 3, 3, 5, 5, 3, 0, 7, 5, 3, 0, 5, 3, 0, 0],
       majestic: [0, 2, 4, 5, 7, 5, 4, 2, 0, 4, 7, 9, 7, 5, 4, 2],
       crystal: [4, 5, 7, 9, 7, 5, 4, 2, 0, 2, 4, 5, 7, 9, 12, 9],
-      chip: [0, 4, 7, 4, 5, 9, 5, 4, 0, 4, 7, 12, 7, 4, 0, 4],
-      ambient: [0, -1, -1, 4, -1, -1, 7, -1, 5, -1, -1, 4, -1, -1, 2, -1],
+      tense: [0, 1, 3, 1, 0, 3, 5, 3, 0, 1, 3, 5, 7, 5, 3, 1],
       rumble: [0, 0, -1, 3, 0, -1, 5, 0, 0, 3, -1, 5, 0, 3, 0, -1],
-      ethereal: [7, -1, 9, -1, 12, -1, 9, -1, 5, -1, 7, -1, 9, -1, 5, -1],
-      electric: [0, 3, 5, 7, 10, 7, 5, 3, 0, 5, 7, 12, 10, 7, 5, 0],
-      playful: [0, 2, 4, 5, 4, 2, 0, 4, 5, 7, 5, 4, 2, 0, 2, 4],
-      regal: [0, -1, 4, -1, 7, -1, 4, -1, 0, 2, 4, 7, 5, 4, 2, 0],
+      spicy: [0, 3, 5, 7, 5, 3, 0, 5, 7, 10, 7, 5, 3, 0, 5, 3],
+      robot: [0, 2, 0, 4, 0, 2, 5, 2, 0, 4, 7, 4, 5, 2, 0, 2],
     };
+
     const bassMotif = {
-      arcade: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 7, -1, 5, -1, 0, -1],
-      arcadePunk: [0, 0, -1, 0, 3, 3, -1, 3, 5, 5, -1, 5, 0, 0, -1, 0],
-      arcadeDark: [0, -1, -1, 0, 5, -1, -1, 5, 0, -1, 3, -1, 5, -1, 0, -1],
-      arcadeBoss: [0, -1, 0, -1, 7, -1, 0, -1, 5, -1, 0, -1, 7, -1, 5, -1],
-      arcadeAttack: [0, 0, 0, -1, 5, 5, 0, -1, 7, 7, 0, -1, 5, 0, 10, -1],
-      tropical: [0, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1, 7, -1, 5, -1],
-      synth: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 3, -1, 5, -1, 0, -1],
-      hollow: [0, -1, -1, -1, -1, -1, 5, -1, 0, -1, -1, -1, -1, -1, 3, -1],
-      tense: [0, 0, -1, 3, 0, -1, 5, -1, 0, 3, -1, 5, 0, -1, 7, -1],
-      glitch: [0, 7, -1, 3, 0, -1, 10, 5, 0, -1, 3, 7, -1, 5, 0, -1],
-      riot: [0, 0, 0, -1, 3, 3, 0, -1, 5, 5, 0, -1, 0, 3, 5, -1],
-      noir: [0, -1, -1, -1, 3, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1],
-      robot: [0, -1, 0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 7, -1, 5, -1],
-      spicy: [0, 0, -1, 5, 0, -1, 3, -1, 5, 5, -1, 0, 3, -1, 5, -1],
-      stealth: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
+      // Sidechain-ish / dance bass
+      popHook: [0, -1, -1, 0, 5, -1, -1, 5, 0, -1, -1, 0, 7, -1, 5, -1],
+      bubblegum: [0, -1, 0, -1, 5, -1, 4, -1, 0, -1, 0, -1, 5, -1, 0, -1],
+      sparkle: [0, -1, -1, -1, 4, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
+      dancePop: [0, -1, 0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 7, -1, 5, -1],
+      anthem: [0, -1, -1, -1, 4, -1, -1, -1, 5, -1, -1, -1, 7, -1, 5, -1],
+      hyperpop: [0, 0, -1, 5, 0, -1, 7, 5, 0, 0, -1, 4, 0, 5, 7, -1],
+      cyberPop: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 7, -1, 5, -1, 0, -1],
+      festival: [0, 0, -1, 0, 5, 5, -1, 5, 7, 7, -1, 7, 0, 5, 0, -1],
+      dropRush: [0, 0, 0, -1, 5, 5, 0, -1, 7, 7, 0, -1, 5, 0, 3, -1],
+      loftHouse: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
+      trapWave: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, 3, -1],
+      phonk: [0, 0, -1, -1, 0, 0, -1, 3, 5, 5, -1, -1, 0, 0, 3, -1],
+      rageBeat: [0, 0, 0, -1, 3, 3, 0, -1, 5, 5, 0, -1, 0, 3, 5, -1],
+      punkPop: [0, 0, -1, 0, 5, 5, -1, 5, 0, 0, -1, 0, 7, 5, -1, 0],
+      softRnb: [0, -1, -1, -1, 3, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1],
+      nightDrive: [0, -1, -1, -1, -1, -1, 5, -1, 0, -1, -1, -1, -1, -1, 7, -1],
+      indieGlow: [0, -1, -1, 2, -1, -1, 5, -1, 0, -1, -1, 4, -1, -1, 5, -1],
+      bedroom: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
+      chillHop: [0, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1, 3, -1, -1, -1],
       wobble: [0, 0, -1, 0, 3, 3, -1, 3, 5, 5, -1, 5, 0, 0, -1, 0],
-      majestic: [0, -1, -1, -1, 4, -1, -1, -1, 7, -1, -1, -1, 5, -1, 4, -1],
-      crystal: [0, -1, -1, 4, -1, -1, 7, -1, 0, -1, -1, 5, -1, -1, 9, -1],
-      chip: [0, -1, 0, -1, 5, -1, 0, -1, 7, -1, 5, -1, 0, -1, 5, -1],
-      ambient: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
-      rumble: [0, 0, 0, -1, 0, 0, 3, -1, 5, 5, 5, -1, 0, 0, 3, -1],
-      ethereal: [0, -1, -1, -1, -1, -1, 7, -1, -1, -1, -1, -1, 5, -1, -1, -1],
-      electric: [0, -1, 5, -1, 0, -1, 7, -1, 0, -1, 5, -1, 3, -1, 0, -1],
-      playful: [0, -1, 0, -1, 5, -1, 4, -1, 0, -1, 7, -1, 5, -1, 0, -1],
-      regal: [0, -1, -1, 4, -1, -1, 7, -1, 0, -1, -1, 5, -1, -1, 4, -1],
       default: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
     };
-    const bMotif = bassMotif[style] || bassMotif.default;
-    const motif = motifs[style] || motifs.arcade || motifs.tropical;
 
-    // Second-bar melody lift styles (call/response feel)
+    const bMotif = bassMotif[style] || bassMotif.default;
+    const motif = motifs[style] || motifs.popHook;
+
+    // Youth groove families
     const liftStyles = new Set([
-      "chip", "playful", "crystal", "tropical", "majestic", "arcade", "arcadeBoss", "candy", "electric",
+      "popHook", "bubblegum", "sparkle", "anthem", "hyperpop", "festival", "dancePop", "cyberPop", "punkPop",
     ]);
-    const busy = new Set([
-      "arcade", "arcadePunk", "arcadeBoss", "arcadeAttack", "riot", "synth", "spicy", "chip", "playful", "electric", "robot",
-    ]);
-    const sparse = new Set(["ambient", "ethereal", "stealth", "noir", "hollow"]);
-    const halfTime = new Set(["rumble", "tense", "noir", "hollow"]);
-    const tripleHat = new Set(["tropical", "playful", "wobble"]);
-    const fourOnFloor = new Set(["synth", "spicy", "electric"]);
+    const trapFeel = new Set(["trapWave", "phonk", "rageBeat", "chillHop"]);
+    const fourOnFloor = new Set(["dancePop", "loftHouse", "festival", "cyberPop", "dropRush", "sparkle"]);
+    const softFeel = new Set(["softRnb", "bedroom", "indieGlow", "nightDrive", "ambient", "ethereal", "hollow"]);
+    const busy = new Set(["hyperpop", "punkPop", "riot", "chip", "playful", "electric"]);
+
+    // Pop progression roots (I–V–vi–IV style degree indices into scale) — original chord motion feel
+    const popProg = [0, 4, 5, 3]; // scale degrees: I, V, vi, IV-ish depending on scale length
 
     for (let i = 0; i < steps; i++) {
       const mi = i % 16;
+      const bar = Math.floor(i / 8) % 4;
       const octaveBoost = i >= 16 && liftStyles.has(style) ? 12 : 0;
 
-      // Lead melody from motif (skip rests)
       const md = motif[mi];
       if (md >= 0) {
         const deg = scale[md % scale.length] + Math.floor(md / scale.length) * 12;
         lead[i] = deg + octaveBoost;
       }
-      // Sparse styles: thin the lead further on odd bars
-      if (sparse.has(style) && i % 2 === 1) lead[i] = -1;
-      // Attack / glitch: stutter some notes into doubles on bar 2
-      if ((style === "glitch" || style === "riot") && i >= 16 && mi % 4 === 0 && lead[i] < 0) {
-        lead[i] = scale[0] + (i % 8 === 0 ? 12 : 0);
+      // Soft styles: breathe on offbeats
+      if (softFeel.has(style) && i % 2 === 1) lead[i] = -1;
+      // Hyperpop stutter fill on second bar
+      if (style === "hyperpop" && i >= 24 && i % 2 === 0) {
+        lead[i] = scale[(i / 2) % scale.length | 0] + 12;
       }
 
-      // Bass
       const bd = bMotif[mi];
       if (bd >= 0) bass[i] = scale[bd % scale.length];
 
-      // Pad chord roots — denser for majestic/crystal, thinner for stealth
-      if (sparse.has(style)) {
+      // Chords: youth pop progression on most bright styles
+      if (softFeel.has(style)) {
         if (i % 16 === 0) chord[i] = scale[0];
-        else if (i % 16 === 8) chord[i] = scale[Math.min(4, scale.length - 1)];
-      } else if (style === "majestic" || style === "crystal" || style === "regal") {
-        if (i % 4 === 0) chord[i] = scale[(i / 4) % scale.length | 0];
+        else if (i % 16 === 8) chord[i] = scale[Math.min(5, scale.length - 1) % scale.length];
+      } else if (liftStyles.has(style) || fourOnFloor.has(style) || style === "anthem") {
+        if (i % 8 === 0) {
+          const degIdx = popProg[bar % popProg.length] % scale.length;
+          chord[i] = scale[degIdx];
+        }
       } else {
         if (i % 8 === 0) chord[i] = scale[0];
         else if (i % 8 === 4) chord[i] = scale[Math.min(3, scale.length - 1)];
       }
 
-      // Kick / snare / hat — distinct grooves per family
-      if (sparse.has(style)) {
+      // Drums
+      if (trapFeel.has(style)) {
+        // Half-time kick/snare + rolling hats
         if (i % 8 === 0) kick[i] = 1;
-        if (i % 16 === 8) snare[i] = 0.55;
-        if (i % 8 === 4) hat[i] = 0.12;
-      } else if (halfTime.has(style)) {
-        if (i % 8 === 0) kick[i] = 1;
-        if (i % 8 === 4) snare[i] = 0.9;
-        if (i % 4 === 2) hat[i] = 0.18;
+        if (i % 16 === 8) snare[i] = 1;
+        if (i % 2 === 1) hat[i] = 0.2;
+        if (i % 16 >= 12) hat[i] = Math.max(hat[i], 0.32); // end-of-bar roll
+        if (style === "rageBeat" && i % 4 === 2) kick[i] = Math.max(kick[i], 0.7);
       } else if (fourOnFloor.has(style)) {
-        if (i % 2 === 0) kick[i] = 0.85;
+        if (i % 2 === 0) kick[i] = 0.9;
         if (i % 8 === 4) snare[i] = 1;
-        if (i % 2 === 1) hat[i] = 0.28;
-      } else if (tripleHat.has(style)) {
-        if (i % 4 === 0) kick[i] = 1;
-        if (i % 8 === 4) snare[i] = 0.8;
-        if (i % 3 === 0) hat[i] = 0.2;
+        if (i % 2 === 1) hat[i] = 0.26;
+        if (style === "festival" && i % 16 >= 14) hat[i] = 0.4;
+      } else if (softFeel.has(style)) {
+        if (i % 8 === 0) kick[i] = 0.85;
+        if (i % 16 === 8) snare[i] = 0.55;
+        if (i % 4 === 2) hat[i] = 0.14;
       } else if (busy.has(style)) {
         if (i % 4 === 0) kick[i] = 1;
         if (i % 8 === 4) snare[i] = 1;
-        if (i % 2 === 1) hat[i] = 0.22;
+        if (i % 2 === 1) hat[i] = 0.24;
+        if (style === "punkPop" && i % 4 === 2) kick[i] = Math.max(kick[i], 0.55);
       } else {
         if (i % 4 === 0) kick[i] = 1;
         if (i % 8 === 4) snare[i] = 0.85;
         if (i % 4 === 2) hat[i] = 0.2;
       }
-      if (style === "glitch" && i % 5 === 0) kick[i] = 1;
-      if (style === "glitch" && i % 7 === 3) snare[i] = 0.7;
       if (style === "wobble" && i % 2 === 0) kick[i] = Math.max(kick[i], 0.7);
-      if (style === "riot" && i % 4 === 2) kick[i] = Math.max(kick[i], 0.6);
-      if (style === "robot" && i % 8 === 6) snare[i] = 0.5;
+      if (style === "phonk" && i % 16 === 4) snare[i] = 0.4;
     }
 
     return { bass, lead, chord, kick, snare, hat, steps, vibe };
