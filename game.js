@@ -27,19 +27,28 @@
   const LB_PREFIX = "skyHopLB_";
   const OWNED_SKINS_KEY = "skyHopOwnedSkins";
   const EQUIPPED_SKIN_KEY = "skyHopEquippedSkin";
-  const STARDUST_KEY = "skyHopStarDust";
+  const GEMS_KEY = "skyHopGems";
+  const GEMS_KEY_LEGACY = "skyHopStarDust";
   const OWNED_MAPS_KEY = "skyHopOwnedMaps";
   const EQUIPPED_MAP_KEY = "skyHopEquippedMap";
 
   // Coins: 1 coin per this many pixels of horizontal travel
   const PIXELS_PER_COIN = 40;
-  // Star Dust: 1 per this many pipes cleared in a run
-  const PIPES_PER_STARDUST = 8;
+  // Gems: 1 per this many pipes cleared in a run (slow free earn)
+  const PIPES_PER_GEM = 25;
   const AD_EVERY_N_RUNS = 3;
   const AD_COUNTDOWN_SEC = 5;
   const LB_MAX = 8;
-  const SPECIAL_CURRENCY_NAME = "Star Dust";
+  const SPECIAL_CURRENCY_NAME = "Gems";
   const RARITY_ORDER = { legendary: 0, epic: 1, rare: 2, common: 3 };
+  const RARITY_SECTIONS = ["legendary", "epic", "rare", "common"];
+
+  // Simulated gem packs (GBP)
+  const GEM_PACKS = [
+    { id: "pack5", gems: 5, priceGbp: "0.99", label: "5 Gems" },
+    { id: "pack15", gems: 15, priceGbp: "1.99", label: "15 Gems" },
+    { id: "pack40", gems: 40, priceGbp: "4.99", label: "40 Gems" },
+  ];
 
   const NPC_NAMES = [
     "SkyPilot",
@@ -77,7 +86,7 @@
     {
       id: "neon",
       name: "Neon Pulse",
-      price: 120,
+      price: 480,
       rarity: "rare",
       currency: "coins",
       trailColor: "#ff2bd6",
@@ -96,7 +105,7 @@
     {
       id: "bone",
       name: "Bone Glider",
-      price: 30,
+      price: 40,
       rarity: "common",
       currency: "coins",
       trailColor: "#f5f0e6",
@@ -114,7 +123,7 @@
     {
       id: "infernal",
       name: "Inferno Fiend",
-      price: 45,
+      price: 85,
       rarity: "common",
       currency: "coins",
       trailColor: "#ff4500",
@@ -133,9 +142,9 @@
     {
       id: "void",
       name: "Void Glitch",
-      price: 15,
+      price: 35,
       rarity: "legendary",
-      currency: "stardust",
+      currency: "gems",
       trailColor: "#5b2dff",
       trailAccent: "#39ff14",
       trailStyle: "void",
@@ -152,7 +161,7 @@
     {
       id: "mohawk",
       name: "Mohawk Riot",
-      price: 35,
+      price: 55,
       rarity: "common",
       currency: "coins",
       trailColor: "#f43f5e",
@@ -170,7 +179,7 @@
     {
       id: "vampire",
       name: "Nightfang",
-      price: 150,
+      price: 620,
       rarity: "rare",
       currency: "coins",
       trailColor: "#dc2626",
@@ -188,7 +197,7 @@
     {
       id: "chrome",
       name: "Chrome Bot",
-      price: 50,
+      price: 110,
       rarity: "common",
       currency: "coins",
       trailColor: "#38bdf8",
@@ -206,7 +215,7 @@
     {
       id: "hotsauce",
       name: "Hot Sauce",
-      price: 40,
+      price: 70,
       rarity: "common",
       currency: "coins",
       trailColor: "#f97316",
@@ -225,7 +234,7 @@
     {
       id: "assassin",
       name: "Shadow Blade",
-      price: 55,
+      price: 140,
       rarity: "common",
       currency: "coins",
       trailColor: "#22d3ee",
@@ -243,9 +252,9 @@
     {
       id: "slime",
       name: "Toxic Slime",
-      price: 12,
+      price: 25,
       rarity: "legendary",
-      currency: "stardust",
+      currency: "gems",
       trailColor: "#a3e635",
       trailAccent: "#bef264",
       trailStyle: "slime",
@@ -262,7 +271,7 @@
     {
       id: "golden",
       name: "Golden Idol",
-      price: 500,
+      price: 3600,
       rarity: "epic",
       currency: "coins",
       trailColor: "#facc15",
@@ -281,7 +290,7 @@
     {
       id: "ice",
       name: "Frost Shard",
-      price: 45,
+      price: 95,
       rarity: "common",
       currency: "coins",
       trailColor: "#67e8f9",
@@ -299,7 +308,7 @@
     {
       id: "pixel",
       name: "Pixel Phantom",
-      price: 160,
+      price: 780,
       rarity: "rare",
       currency: "coins",
       trailColor: "#4ade80",
@@ -317,9 +326,9 @@
     {
       id: "cosmic",
       name: "Cosmic Drift",
-      price: 20,
+      price: 50,
       rarity: "legendary",
-      currency: "stardust",
+      currency: "gems",
       trailColor: "#818cf8",
       trailAccent: "#fbbf24",
       trailStyle: "cosmic",
@@ -336,7 +345,7 @@
     {
       id: "lava",
       name: "Lava Core",
-      price: 180,
+      price: 950,
       rarity: "rare",
       currency: "coins",
       trailColor: "#f97316",
@@ -355,7 +364,7 @@
     {
       id: "ghost",
       name: "Ghost Drift",
-      price: 400,
+      price: 2800,
       rarity: "epic",
       currency: "coins",
       trailColor: "#e2e8f0",
@@ -374,7 +383,7 @@
     {
       id: "eel",
       name: "Volt Eel",
-      price: 50,
+      price: 125,
       rarity: "common",
       currency: "coins",
       trailColor: "#facc15",
@@ -393,7 +402,7 @@
     {
       id: "candy",
       name: "Candy Crash",
-      price: 350,
+      price: 2200,
       rarity: "epic",
       currency: "coins",
       trailColor: "#f472b6",
@@ -411,9 +420,9 @@
     {
       id: "obsidian",
       name: "Obsidian King",
-      price: 25,
+      price: 75,
       rarity: "legendary",
-      currency: "stardust",
+      currency: "gems",
       trailColor: "#f43f5e",
       trailAccent: "#a1a1aa",
       trailStyle: "obsidian",
@@ -435,25 +444,25 @@
   // --- Maps (~20) — one theme per skin, same rarity/pricing ---
   const MAPS = [
     { id: "coral", name: "Coral Hopper", price: 0, rarity: "common", currency: "coins", skyTop: "#4a9fd8", skyBot: "#b8e4f8", cloud: "rgba(255,255,255,0.55)", ground: "#3d8b5a", groundDark: "#2f6b45", dirt: "#8b6914", dirtDark: "#6b5010", pipe: "#2a9d8f", pipeDark: "#1d7a6f", pipeRim: "#e9c46a", pipeHighlight: "#40c4b0", hill1: "rgba(45,120,90,0.35)", hill2: "rgba(35,100,75,0.4)", sun: "rgba(255,236,179,0.85)", sunGlow: "rgba(255,220,140,0.2)", decor: "day" },
-    { id: "neon", name: "Neon Pulse", price: 120, rarity: "rare", currency: "coins", skyTop: "#12081f", skyBot: "#2a1048", cloud: "rgba(255,43,214,0.25)", ground: "#1a1030", groundDark: "#0d0618", dirt: "#2d1b4e", dirtDark: "#1a0f30", pipe: "#ff2bd6", pipeDark: "#7a0d68", pipeRim: "#00f0ff", pipeHighlight: "#ff6ae8", hill1: "rgba(255,43,214,0.15)", hill2: "rgba(0,240,255,0.12)", sun: "rgba(0,240,255,0.7)", sunGlow: "rgba(255,43,214,0.25)", decor: "neon" },
-    { id: "bone", name: "Bone Glider", price: 30, rarity: "common", currency: "coins", skyTop: "#9ca3af", skyBot: "#e5e7eb", cloud: "rgba(255,255,255,0.7)", ground: "#a8a29e", groundDark: "#78716c", dirt: "#d6d3d1", dirtDark: "#a8a29e", pipe: "#d9d0c1", pipeDark: "#a89880", pipeRim: "#f5f0e6", pipeHighlight: "#ffffff", hill1: "rgba(120,113,108,0.35)", hill2: "rgba(87,83,78,0.4)", sun: "rgba(255,255,255,0.9)", sunGlow: "rgba(255,255,255,0.25)", decor: "fog" },
-    { id: "infernal", name: "Inferno Fiend", price: 45, rarity: "common", currency: "coins", skyTop: "#1a0505", skyBot: "#5c1408", cloud: "rgba(255,100,40,0.2)", ground: "#3a1508", groundDark: "#1f0a04", dirt: "#5c2a10", dirtDark: "#3a1808", pipe: "#8b0000", pipeDark: "#4a0000", pipeRim: "#ffcc00", pipeHighlight: "#ff4500", hill1: "rgba(180,40,10,0.35)", hill2: "rgba(120,20,5,0.4)", sun: "rgba(255,80,20,0.85)", sunGlow: "rgba(255,40,0,0.3)", decor: "embers" },
-    { id: "void", name: "Void Glitch", price: 15, rarity: "legendary", currency: "stardust", skyTop: "#05020c", skyBot: "#1a0a3a", cloud: "rgba(91,45,255,0.2)", ground: "#0a0614", groundDark: "#05020a", dirt: "#1a1040", dirtDark: "#0c0820", pipe: "#5b2dff", pipeDark: "#2a1060", pipeRim: "#39ff14", pipeHighlight: "#7c3aed", hill1: "rgba(91,45,255,0.2)", hill2: "rgba(57,255,20,0.1)", sun: "rgba(57,255,20,0.55)", sunGlow: "rgba(91,45,255,0.3)", decor: "glitch" },
-    { id: "mohawk", name: "Mohawk Riot", price: 35, rarity: "common", currency: "coins", skyTop: "#374151", skyBot: "#9ca3af", cloud: "rgba(244,63,94,0.2)", ground: "#1f2937", groundDark: "#111827", dirt: "#4b5563", dirtDark: "#374151", pipe: "#f43f5e", pipeDark: "#9f1239", pipeRim: "#fbbf24", pipeHighlight: "#fb7185", hill1: "rgba(31,41,55,0.5)", hill2: "rgba(17,24,39,0.55)", sun: "rgba(251,191,36,0.75)", sunGlow: "rgba(244,63,94,0.2)", decor: "day" },
-    { id: "vampire", name: "Nightfang", price: 150, rarity: "rare", currency: "coins", skyTop: "#0c0610", skyBot: "#3b0a1a", cloud: "rgba(220,38,38,0.18)", ground: "#1a0b14", groundDark: "#0a0508", dirt: "#2d0a18", dirtDark: "#1a0810", pipe: "#6b0f2a", pipeDark: "#3a0814", pipeRim: "#fca5a5", pipeHighlight: "#dc2626", hill1: "rgba(80,10,30,0.4)", hill2: "rgba(50,5,20,0.45)", sun: "rgba(220,38,38,0.55)", sunGlow: "rgba(127,29,29,0.35)", decor: "moon" },
-    { id: "chrome", name: "Chrome Bot", price: 50, rarity: "common", currency: "coins", skyTop: "#334155", skyBot: "#94a3b8", cloud: "rgba(226,232,240,0.4)", ground: "#64748b", groundDark: "#475569", dirt: "#94a3b8", dirtDark: "#64748b", pipe: "#38bdf8", pipeDark: "#0284c7", pipeRim: "#e2e8f0", pipeHighlight: "#7dd3fc", hill1: "rgba(71,85,105,0.4)", hill2: "rgba(51,65,85,0.45)", sun: "rgba(56,189,248,0.8)", sunGlow: "rgba(148,163,184,0.3)", decor: "grid" },
-    { id: "hotsauce", name: "Hot Sauce", price: 40, rarity: "common", currency: "coins", skyTop: "#7f1d1d", skyBot: "#fb923c", cloud: "rgba(253,224,71,0.25)", ground: "#b91c1c", groundDark: "#7f1d1d", dirt: "#ea580c", dirtDark: "#9a3412", pipe: "#f97316", pipeDark: "#c2410c", pipeRim: "#fde047", pipeHighlight: "#fb923c", hill1: "rgba(185,28,28,0.4)", hill2: "rgba(127,29,29,0.45)", sun: "rgba(253,224,71,0.9)", sunGlow: "rgba(249,115,22,0.35)", decor: "embers" },
-    { id: "assassin", name: "Shadow Blade", price: 55, rarity: "common", currency: "coins", skyTop: "#020617", skyBot: "#1e293b", cloud: "rgba(34,211,238,0.15)", ground: "#0f172a", groundDark: "#020617", dirt: "#1e293b", dirtDark: "#0f172a", pipe: "#334155", pipeDark: "#0f172a", pipeRim: "#22d3ee", pipeHighlight: "#64748b", hill1: "rgba(15,23,42,0.55)", hill2: "rgba(2,6,23,0.6)", sun: "rgba(34,211,238,0.5)", sunGlow: "rgba(34,211,238,0.15)", decor: "night" },
-    { id: "slime", name: "Toxic Slime", price: 12, rarity: "legendary", currency: "stardust", skyTop: "#14532d", skyBot: "#65a30d", cloud: "rgba(163,230,53,0.3)", ground: "#3f6212", groundDark: "#1a2e05", dirt: "#4d7c0f", dirtDark: "#365314", pipe: "#84cc16", pipeDark: "#3f6212", pipeRim: "#d9f99d", pipeHighlight: "#a3e635", hill1: "rgba(101,163,13,0.35)", hill2: "rgba(63,98,18,0.4)", sun: "rgba(190,242,100,0.75)", sunGlow: "rgba(163,230,53,0.3)", decor: "bubbles" },
-    { id: "golden", name: "Golden Idol", price: 500, rarity: "epic", currency: "coins", skyTop: "#78350f", skyBot: "#fde047", cloud: "rgba(250,204,21,0.35)", ground: "#ca8a04", groundDark: "#854d0e", dirt: "#eab308", dirtDark: "#a16207", pipe: "#eab308", pipeDark: "#a16207", pipeRim: "#fff7cc", pipeHighlight: "#facc15", hill1: "rgba(202,138,4,0.4)", hill2: "rgba(133,77,14,0.45)", sun: "rgba(255,247,204,0.95)", sunGlow: "rgba(250,204,21,0.4)", decor: "sparkle" },
-    { id: "ice", name: "Frost Shard", price: 45, rarity: "common", currency: "coins", skyTop: "#0c4a6e", skyBot: "#bae6fd", cloud: "rgba(255,255,255,0.65)", ground: "#7dd3fc", groundDark: "#0284c7", dirt: "#e0f2fe", dirtDark: "#7dd3fc", pipe: "#38bdf8", pipeDark: "#0369a1", pipeRim: "#ffffff", pipeHighlight: "#67e8f9", hill1: "rgba(125,211,252,0.4)", hill2: "rgba(56,189,248,0.35)", sun: "rgba(255,255,255,0.9)", sunGlow: "rgba(186,230,253,0.4)", decor: "snow" },
-    { id: "pixel", name: "Pixel Phantom", price: 160, rarity: "rare", currency: "coins", skyTop: "#052e16", skyBot: "#22c55e", cloud: "rgba(187,247,208,0.35)", ground: "#15803d", groundDark: "#052e16", dirt: "#16a34a", dirtDark: "#14532d", pipe: "#4ade80", pipeDark: "#166534", pipeRim: "#fef08a", pipeHighlight: "#86efac", hill1: "rgba(34,197,94,0.35)", hill2: "rgba(21,128,61,0.4)", sun: "rgba(254,240,138,0.8)", sunGlow: "rgba(74,222,128,0.3)", decor: "pixel" },
-    { id: "cosmic", name: "Cosmic Drift", price: 20, rarity: "legendary", currency: "stardust", skyTop: "#0b0620", skyBot: "#312e81", cloud: "rgba(192,132,252,0.25)", ground: "#1e1b4b", groundDark: "#0b0620", dirt: "#312e81", dirtDark: "#1e1b4b", pipe: "#818cf8", pipeDark: "#4338ca", pipeRim: "#f0abfc", pipeHighlight: "#a78bfa", hill1: "rgba(129,140,248,0.25)", hill2: "rgba(67,56,202,0.3)", sun: "rgba(251,191,36,0.7)", sunGlow: "rgba(192,132,252,0.3)", decor: "stars" },
-    { id: "lava", name: "Lava Core", price: 180, rarity: "rare", currency: "coins", skyTop: "#1c1917", skyBot: "#7c2d12", cloud: "rgba(249,115,22,0.2)", ground: "#292524", groundDark: "#0c0a09", dirt: "#44403c", dirtDark: "#292524", pipe: "#ea580c", pipeDark: "#7c2d12", pipeRim: "#fef08a", pipeHighlight: "#f97316", hill1: "rgba(120,53,15,0.45)", hill2: "rgba(68,64,60,0.5)", sun: "rgba(249,115,22,0.8)", sunGlow: "rgba(234,88,12,0.35)", decor: "embers" },
-    { id: "ghost", name: "Ghost Drift", price: 400, rarity: "epic", currency: "coins", skyTop: "#1e293b", skyBot: "#64748b", cloud: "rgba(248,250,252,0.35)", ground: "#334155", groundDark: "#1e293b", dirt: "#475569", dirtDark: "#334155", pipe: "#cbd5e1", pipeDark: "#64748b", pipeRim: "#f8fafc", pipeHighlight: "#e2e8f0", hill1: "rgba(100,116,139,0.35)", hill2: "rgba(51,65,85,0.4)", sun: "rgba(248,250,252,0.55)", sunGlow: "rgba(226,232,240,0.2)", decor: "mist" },
-    { id: "eel", name: "Volt Eel", price: 50, rarity: "common", currency: "coins", skyTop: "#042f2e", skyBot: "#0f766e", cloud: "rgba(250,204,21,0.2)", ground: "#115e59", groundDark: "#042f2e", dirt: "#0f766e", dirtDark: "#134e4a", pipe: "#2dd4bf", pipeDark: "#0f766e", pipeRim: "#facc15", pipeHighlight: "#5eead4", hill1: "rgba(15,118,110,0.4)", hill2: "rgba(19,78,74,0.45)", sun: "rgba(250,204,21,0.75)", sunGlow: "rgba(45,212,191,0.25)", decor: "sparks" },
-    { id: "candy", name: "Candy Crash", price: 350, rarity: "epic", currency: "coins", skyTop: "#831843", skyBot: "#fbcfe8", cloud: "rgba(165,243,252,0.4)", ground: "#db2777", groundDark: "#9d174d", dirt: "#ec4899", dirtDark: "#be185d", pipe: "#f472b6", pipeDark: "#be185d", pipeRim: "#67e8f9", pipeHighlight: "#fbcfe8", hill1: "rgba(236,72,153,0.35)", hill2: "rgba(190,24,93,0.4)", sun: "rgba(167,232,252,0.85)", sunGlow: "rgba(244,114,182,0.3)", decor: "sprinkles" },
-    { id: "obsidian", name: "Obsidian King", price: 25, rarity: "legendary", currency: "stardust", skyTop: "#000000", skyBot: "#27272a", cloud: "rgba(244,63,94,0.15)", ground: "#18181b", groundDark: "#09090b", dirt: "#3f3f46", dirtDark: "#27272a", pipe: "#3f3f46", pipeDark: "#18181b", pipeRim: "#f43f5e", pipeHighlight: "#71717a", hill1: "rgba(39,39,42,0.55)", hill2: "rgba(9,9,11,0.6)", sun: "rgba(244,63,94,0.55)", sunGlow: "rgba(244,63,94,0.2)", decor: "spikes" },
+    { id: "neon", name: "Neon Pulse", price: 480, rarity: "rare", currency: "coins", skyTop: "#12081f", skyBot: "#2a1048", cloud: "rgba(255,43,214,0.25)", ground: "#1a1030", groundDark: "#0d0618", dirt: "#2d1b4e", dirtDark: "#1a0f30", pipe: "#ff2bd6", pipeDark: "#7a0d68", pipeRim: "#00f0ff", pipeHighlight: "#ff6ae8", hill1: "rgba(255,43,214,0.15)", hill2: "rgba(0,240,255,0.12)", sun: "rgba(0,240,255,0.7)", sunGlow: "rgba(255,43,214,0.25)", decor: "neon" },
+    { id: "bone", name: "Bone Glider", price: 40, rarity: "common", currency: "coins", skyTop: "#9ca3af", skyBot: "#e5e7eb", cloud: "rgba(255,255,255,0.7)", ground: "#a8a29e", groundDark: "#78716c", dirt: "#d6d3d1", dirtDark: "#a8a29e", pipe: "#d9d0c1", pipeDark: "#a89880", pipeRim: "#f5f0e6", pipeHighlight: "#ffffff", hill1: "rgba(120,113,108,0.35)", hill2: "rgba(87,83,78,0.4)", sun: "rgba(255,255,255,0.9)", sunGlow: "rgba(255,255,255,0.25)", decor: "fog" },
+    { id: "infernal", name: "Inferno Fiend", price: 85, rarity: "common", currency: "coins", skyTop: "#1a0505", skyBot: "#5c1408", cloud: "rgba(255,100,40,0.2)", ground: "#3a1508", groundDark: "#1f0a04", dirt: "#5c2a10", dirtDark: "#3a1808", pipe: "#8b0000", pipeDark: "#4a0000", pipeRim: "#ffcc00", pipeHighlight: "#ff4500", hill1: "rgba(180,40,10,0.35)", hill2: "rgba(120,20,5,0.4)", sun: "rgba(255,80,20,0.85)", sunGlow: "rgba(255,40,0,0.3)", decor: "embers" },
+    { id: "void", name: "Void Glitch", price: 35, rarity: "legendary", currency: "gems", skyTop: "#05020c", skyBot: "#1a0a3a", cloud: "rgba(91,45,255,0.2)", ground: "#0a0614", groundDark: "#05020a", dirt: "#1a1040", dirtDark: "#0c0820", pipe: "#5b2dff", pipeDark: "#2a1060", pipeRim: "#39ff14", pipeHighlight: "#7c3aed", hill1: "rgba(91,45,255,0.2)", hill2: "rgba(57,255,20,0.1)", sun: "rgba(57,255,20,0.55)", sunGlow: "rgba(91,45,255,0.3)", decor: "glitch" },
+    { id: "mohawk", name: "Mohawk Riot", price: 55, rarity: "common", currency: "coins", skyTop: "#374151", skyBot: "#9ca3af", cloud: "rgba(244,63,94,0.2)", ground: "#1f2937", groundDark: "#111827", dirt: "#4b5563", dirtDark: "#374151", pipe: "#f43f5e", pipeDark: "#9f1239", pipeRim: "#fbbf24", pipeHighlight: "#fb7185", hill1: "rgba(31,41,55,0.5)", hill2: "rgba(17,24,39,0.55)", sun: "rgba(251,191,36,0.75)", sunGlow: "rgba(244,63,94,0.2)", decor: "day" },
+    { id: "vampire", name: "Nightfang", price: 620, rarity: "rare", currency: "coins", skyTop: "#0c0610", skyBot: "#3b0a1a", cloud: "rgba(220,38,38,0.18)", ground: "#1a0b14", groundDark: "#0a0508", dirt: "#2d0a18", dirtDark: "#1a0810", pipe: "#6b0f2a", pipeDark: "#3a0814", pipeRim: "#fca5a5", pipeHighlight: "#dc2626", hill1: "rgba(80,10,30,0.4)", hill2: "rgba(50,5,20,0.45)", sun: "rgba(220,38,38,0.55)", sunGlow: "rgba(127,29,29,0.35)", decor: "moon" },
+    { id: "chrome", name: "Chrome Bot", price: 110, rarity: "common", currency: "coins", skyTop: "#334155", skyBot: "#94a3b8", cloud: "rgba(226,232,240,0.4)", ground: "#64748b", groundDark: "#475569", dirt: "#94a3b8", dirtDark: "#64748b", pipe: "#38bdf8", pipeDark: "#0284c7", pipeRim: "#e2e8f0", pipeHighlight: "#7dd3fc", hill1: "rgba(71,85,105,0.4)", hill2: "rgba(51,65,85,0.45)", sun: "rgba(56,189,248,0.8)", sunGlow: "rgba(148,163,184,0.3)", decor: "grid" },
+    { id: "hotsauce", name: "Hot Sauce", price: 70, rarity: "common", currency: "coins", skyTop: "#7f1d1d", skyBot: "#fb923c", cloud: "rgba(253,224,71,0.25)", ground: "#b91c1c", groundDark: "#7f1d1d", dirt: "#ea580c", dirtDark: "#9a3412", pipe: "#f97316", pipeDark: "#c2410c", pipeRim: "#fde047", pipeHighlight: "#fb923c", hill1: "rgba(185,28,28,0.4)", hill2: "rgba(127,29,29,0.45)", sun: "rgba(253,224,71,0.9)", sunGlow: "rgba(249,115,22,0.35)", decor: "embers" },
+    { id: "assassin", name: "Shadow Blade", price: 140, rarity: "common", currency: "coins", skyTop: "#020617", skyBot: "#1e293b", cloud: "rgba(34,211,238,0.15)", ground: "#0f172a", groundDark: "#020617", dirt: "#1e293b", dirtDark: "#0f172a", pipe: "#334155", pipeDark: "#0f172a", pipeRim: "#22d3ee", pipeHighlight: "#64748b", hill1: "rgba(15,23,42,0.55)", hill2: "rgba(2,6,23,0.6)", sun: "rgba(34,211,238,0.5)", sunGlow: "rgba(34,211,238,0.15)", decor: "night" },
+    { id: "slime", name: "Toxic Slime", price: 25, rarity: "legendary", currency: "gems", skyTop: "#14532d", skyBot: "#65a30d", cloud: "rgba(163,230,53,0.3)", ground: "#3f6212", groundDark: "#1a2e05", dirt: "#4d7c0f", dirtDark: "#365314", pipe: "#84cc16", pipeDark: "#3f6212", pipeRim: "#d9f99d", pipeHighlight: "#a3e635", hill1: "rgba(101,163,13,0.35)", hill2: "rgba(63,98,18,0.4)", sun: "rgba(190,242,100,0.75)", sunGlow: "rgba(163,230,53,0.3)", decor: "bubbles" },
+    { id: "golden", name: "Golden Idol", price: 3600, rarity: "epic", currency: "coins", skyTop: "#78350f", skyBot: "#fde047", cloud: "rgba(250,204,21,0.35)", ground: "#ca8a04", groundDark: "#854d0e", dirt: "#eab308", dirtDark: "#a16207", pipe: "#eab308", pipeDark: "#a16207", pipeRim: "#fff7cc", pipeHighlight: "#facc15", hill1: "rgba(202,138,4,0.4)", hill2: "rgba(133,77,14,0.45)", sun: "rgba(255,247,204,0.95)", sunGlow: "rgba(250,204,21,0.4)", decor: "sparkle" },
+    { id: "ice", name: "Frost Shard", price: 95, rarity: "common", currency: "coins", skyTop: "#0c4a6e", skyBot: "#bae6fd", cloud: "rgba(255,255,255,0.65)", ground: "#7dd3fc", groundDark: "#0284c7", dirt: "#e0f2fe", dirtDark: "#7dd3fc", pipe: "#38bdf8", pipeDark: "#0369a1", pipeRim: "#ffffff", pipeHighlight: "#67e8f9", hill1: "rgba(125,211,252,0.4)", hill2: "rgba(56,189,248,0.35)", sun: "rgba(255,255,255,0.9)", sunGlow: "rgba(186,230,253,0.4)", decor: "snow" },
+    { id: "pixel", name: "Pixel Phantom", price: 780, rarity: "rare", currency: "coins", skyTop: "#052e16", skyBot: "#22c55e", cloud: "rgba(187,247,208,0.35)", ground: "#15803d", groundDark: "#052e16", dirt: "#16a34a", dirtDark: "#14532d", pipe: "#4ade80", pipeDark: "#166534", pipeRim: "#fef08a", pipeHighlight: "#86efac", hill1: "rgba(34,197,94,0.35)", hill2: "rgba(21,128,61,0.4)", sun: "rgba(254,240,138,0.8)", sunGlow: "rgba(74,222,128,0.3)", decor: "pixel" },
+    { id: "cosmic", name: "Cosmic Drift", price: 50, rarity: "legendary", currency: "gems", skyTop: "#0b0620", skyBot: "#312e81", cloud: "rgba(192,132,252,0.25)", ground: "#1e1b4b", groundDark: "#0b0620", dirt: "#312e81", dirtDark: "#1e1b4b", pipe: "#818cf8", pipeDark: "#4338ca", pipeRim: "#f0abfc", pipeHighlight: "#a78bfa", hill1: "rgba(129,140,248,0.25)", hill2: "rgba(67,56,202,0.3)", sun: "rgba(251,191,36,0.7)", sunGlow: "rgba(192,132,252,0.3)", decor: "stars" },
+    { id: "lava", name: "Lava Core", price: 950, rarity: "rare", currency: "coins", skyTop: "#1c1917", skyBot: "#7c2d12", cloud: "rgba(249,115,22,0.2)", ground: "#292524", groundDark: "#0c0a09", dirt: "#44403c", dirtDark: "#292524", pipe: "#ea580c", pipeDark: "#7c2d12", pipeRim: "#fef08a", pipeHighlight: "#f97316", hill1: "rgba(120,53,15,0.45)", hill2: "rgba(68,64,60,0.5)", sun: "rgba(249,115,22,0.8)", sunGlow: "rgba(234,88,12,0.35)", decor: "embers" },
+    { id: "ghost", name: "Ghost Drift", price: 2800, rarity: "epic", currency: "coins", skyTop: "#1e293b", skyBot: "#64748b", cloud: "rgba(248,250,252,0.35)", ground: "#334155", groundDark: "#1e293b", dirt: "#475569", dirtDark: "#334155", pipe: "#cbd5e1", pipeDark: "#64748b", pipeRim: "#f8fafc", pipeHighlight: "#e2e8f0", hill1: "rgba(100,116,139,0.35)", hill2: "rgba(51,65,85,0.4)", sun: "rgba(248,250,252,0.55)", sunGlow: "rgba(226,232,240,0.2)", decor: "mist" },
+    { id: "eel", name: "Volt Eel", price: 125, rarity: "common", currency: "coins", skyTop: "#042f2e", skyBot: "#0f766e", cloud: "rgba(250,204,21,0.2)", ground: "#115e59", groundDark: "#042f2e", dirt: "#0f766e", dirtDark: "#134e4a", pipe: "#2dd4bf", pipeDark: "#0f766e", pipeRim: "#facc15", pipeHighlight: "#5eead4", hill1: "rgba(15,118,110,0.4)", hill2: "rgba(19,78,74,0.45)", sun: "rgba(250,204,21,0.75)", sunGlow: "rgba(45,212,191,0.25)", decor: "sparks" },
+    { id: "candy", name: "Candy Crash", price: 2200, rarity: "epic", currency: "coins", skyTop: "#831843", skyBot: "#fbcfe8", cloud: "rgba(165,243,252,0.4)", ground: "#db2777", groundDark: "#9d174d", dirt: "#ec4899", dirtDark: "#be185d", pipe: "#f472b6", pipeDark: "#be185d", pipeRim: "#67e8f9", pipeHighlight: "#fbcfe8", hill1: "rgba(236,72,153,0.35)", hill2: "rgba(190,24,93,0.4)", sun: "rgba(167,232,252,0.85)", sunGlow: "rgba(244,114,182,0.3)", decor: "sprinkles" },
+    { id: "obsidian", name: "Obsidian King", price: 75, rarity: "legendary", currency: "gems", skyTop: "#000000", skyBot: "#27272a", cloud: "rgba(244,63,94,0.15)", ground: "#18181b", groundDark: "#09090b", dirt: "#3f3f46", dirtDark: "#27272a", pipe: "#3f3f46", pipeDark: "#18181b", pipeRim: "#f43f5e", pipeHighlight: "#71717a", hill1: "rgba(39,39,42,0.55)", hill2: "rgba(9,9,11,0.6)", sun: "rgba(244,63,94,0.55)", sunGlow: "rgba(244,63,94,0.2)", decor: "spikes" },
   ];
 
   const MAP_BY_ID = Object.fromEntries(MAPS.map((m) => [m.id, m]));
@@ -469,11 +478,30 @@
   let pipeSpeed = PIPE_SPEED_BASE;
   let pipeGap = PIPE_GAP_BASE;
 
+  function loadGemsBalance() {
+    const fresh = localStorage.getItem(GEMS_KEY);
+    if (fresh !== null && fresh !== "") {
+      return Number(fresh) || 0;
+    }
+    const legacy = localStorage.getItem(GEMS_KEY_LEGACY);
+    if (legacy !== null && legacy !== "") {
+      const migrated = Number(legacy) || 0;
+      localStorage.setItem(GEMS_KEY, String(migrated));
+      try {
+        localStorage.removeItem(GEMS_KEY_LEGACY);
+      } catch (_) {
+        /* ignore */
+      }
+      return migrated;
+    }
+    return 0;
+  }
+
   let coins = Number(localStorage.getItem(COINS_KEY) || 0) || 0;
-  let starDust = Number(localStorage.getItem(STARDUST_KEY) || 0) || 0;
+  let gems = loadGemsBalance();
   let runDistance = 0;
   let coinsEarnedThisRun = 0;
-  let starDustEarnedThisRun = 0;
+  let gemsEarnedThisRun = 0;
   let runsSinceAd = Number(localStorage.getItem(RUNS_KEY) || 0) || 0;
   let adsRemoved = localStorage.getItem(ADS_REMOVED_KEY) === "1";
   let playerName = (localStorage.getItem(NAME_KEY) || "You").slice(0, 16);
@@ -609,7 +637,8 @@
     panel: "rgba(15, 23, 42, 0.72)",
     accent: "#e9c46a",
     coin: "#f4d35e",
-    stardust: "#c084fc",
+    gem: "#c084fc",
+    stardust: "#c084fc", // alias
   };
 
   applyMapPalette(getEquippedMap());
@@ -744,10 +773,15 @@
   const removeAdsBack = document.getElementById("remove-ads-back");
   const rankBack = document.getElementById("rank-back");
   const coinBalanceEl = document.getElementById("coin-balance");
-  const stardustBalanceEl = document.getElementById("stardust-balance");
+  const gemsBalanceEl = document.getElementById("gems-balance") || document.getElementById("stardust-balance");
   const shopCoinBalanceEl = document.getElementById("shop-coin-balance");
-  const shopStardustBalanceEl = document.getElementById("shop-stardust-balance");
+  const shopGemsBalanceEl = document.getElementById("shop-gems-balance") || document.getElementById("shop-stardust-balance");
   const btnShop = document.getElementById("btn-shop");
+  const btnBuyGems = document.getElementById("btn-buy-gems");
+  const btnBuyGemsPromo = document.getElementById("btn-buy-gems-promo");
+  const gemsPage = document.getElementById("gems-page");
+  const gemsBack = document.getElementById("gems-back");
+  const gemsPacksEl = document.getElementById("gems-packs");
   const shopModal = document.getElementById("shop-modal");
   const shopClose = document.getElementById("shop-close");
   const shopGrid = document.getElementById("shop-grid");
@@ -759,8 +793,12 @@
   const adCountdown = document.getElementById("ad-countdown");
   const adContinue = document.getElementById("ad-continue");
   const checkoutModal = document.getElementById("checkout-modal");
+  const checkoutItemEl = document.querySelector(".checkout-item");
+  const checkoutPriceEl = document.querySelector(".checkout-price");
   const checkoutCancel = document.getElementById("checkout-cancel");
   const checkoutConfirm = document.getElementById("checkout-confirm");
+  let checkoutKind = "ads"; // ads | gems
+  let pendingGemPack = null;
 
   let activePeriod = "daily";
 
@@ -829,11 +867,11 @@
 
   function syncCoinHUD() {
     const text = String(coins);
-    const dust = String(starDust);
+    const gemText = String(gems);
     if (coinBalanceEl) coinBalanceEl.textContent = text;
     if (shopCoinBalanceEl) shopCoinBalanceEl.textContent = text;
-    if (stardustBalanceEl) stardustBalanceEl.textContent = dust;
-    if (shopStardustBalanceEl) shopStardustBalanceEl.textContent = dust;
+    if (gemsBalanceEl) gemsBalanceEl.textContent = gemText;
+    if (shopGemsBalanceEl) shopGemsBalanceEl.textContent = gemText;
   }
 
   function persistCoins() {
@@ -841,8 +879,8 @@
     syncCoinHUD();
   }
 
-  function persistStarDust() {
-    localStorage.setItem(STARDUST_KEY, String(starDust));
+  function persistGems() {
+    localStorage.setItem(GEMS_KEY, String(gems));
     syncCoinHUD();
   }
 
@@ -852,22 +890,28 @@
 
   function priceLabel(item) {
     if (item.price <= 0) return "Free";
-    if (item.currency === "stardust") return `${item.price} Star Dust`;
+    if (item.currency === "gems" || item.currency === "stardust") {
+      return `${item.price} ${SPECIAL_CURRENCY_NAME}`;
+    }
     return `${item.price} coins`;
+  }
+
+  function isGemsCurrency(item) {
+    return item.currency === "gems" || item.currency === "stardust";
   }
 
   function canAfford(item) {
     if (item.price <= 0) return true;
-    if (item.currency === "stardust") return starDust >= item.price;
+    if (isGemsCurrency(item)) return gems >= item.price;
     return coins >= item.price;
   }
 
   function spendForItem(item) {
     if (item.price <= 0) return true;
-    if (item.currency === "stardust") {
-      if (starDust < item.price) return false;
-      starDust -= item.price;
-      persistStarDust();
+    if (isGemsCurrency(item)) {
+      if (gems < item.price) return false;
+      gems -= item.price;
+      persistGems();
       return true;
     }
     if (coins < item.price) return false;
@@ -1000,10 +1044,61 @@
     localStorage.setItem(ADS_REMOVED_KEY, adsRemoved ? "1" : "0");
   }
 
-  function openCheckout() {
+  function setCheckoutUI(itemLabel, priceLabel, confirmLabel) {
+    if (checkoutItemEl) checkoutItemEl.textContent = itemLabel;
+    if (checkoutPriceEl) checkoutPriceEl.textContent = priceLabel;
+    if (checkoutConfirm) checkoutConfirm.textContent = confirmLabel;
+  }
+
+  function openCheckoutAds() {
     if (adsRemoved) return;
+    checkoutKind = "ads";
+    pendingGemPack = null;
+    setCheckoutUI("Remove ads — Sky Hop", "£1.99 GBP", "Confirm £1.99");
     checkoutModal.classList.remove("hidden");
     checkoutModal.setAttribute("aria-hidden", "false");
+  }
+
+  function openCheckoutGemPack(pack) {
+    checkoutKind = "gems";
+    pendingGemPack = pack;
+    setCheckoutUI(
+      `${pack.label} — Sky Hop`,
+      `£${pack.priceGbp} GBP`,
+      `Confirm £${pack.priceGbp}`
+    );
+    checkoutModal.classList.remove("hidden");
+    checkoutModal.setAttribute("aria-hidden", "false");
+  }
+
+  function openCheckout() {
+    openCheckoutAds();
+  }
+
+  function renderGemPacks() {
+    if (!gemsPacksEl) return;
+    gemsPacksEl.innerHTML = "";
+    for (const pack of GEM_PACKS) {
+      const card = document.createElement("div");
+      card.className = "gem-pack-card";
+      card.innerHTML =
+        `<p class="gem-pack-amount">${pack.gems} Gems</p>` +
+        `<p class="gem-pack-price">£${pack.priceGbp} <span>GBP</span></p>` +
+        `<p class="gem-pack-note">Simulated purchase — no real payment.</p>`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "promo-btn gem-pack-btn";
+      btn.textContent = `Buy · £${pack.priceGbp}`;
+      btn.addEventListener("click", () => openCheckoutGemPack(pack));
+      card.appendChild(btn);
+      gemsPacksEl.appendChild(card);
+    }
+  }
+
+  function openGemsPage() {
+    renderGemPacks();
+    syncCoinHUD();
+    if (gemsPage) openPage(gemsPage);
   }
 
   nameInput.value = playerName;
@@ -1068,11 +1163,23 @@
   }
 
   checkoutCancel.addEventListener("click", () => {
+    pendingGemPack = null;
+    checkoutKind = "ads";
     checkoutModal.classList.add("hidden");
     checkoutModal.setAttribute("aria-hidden", "true");
   });
 
   checkoutConfirm.addEventListener("click", () => {
+    if (checkoutKind === "gems" && pendingGemPack) {
+      gems += pendingGemPack.gems;
+      persistGems();
+      pendingGemPack = null;
+      checkoutKind = "ads";
+      checkoutModal.classList.add("hidden");
+      checkoutModal.setAttribute("aria-hidden", "true");
+      if (shopModal && !shopModal.classList.contains("hidden")) renderShop();
+      return;
+    }
     adsRemoved = true;
     persistAdsRemoved();
     runsSinceAd = 0;
@@ -1145,6 +1252,10 @@
       const on = t.dataset.tab === shopTab;
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
+      const kind = t.dataset.tab;
+      const count = kind === "maps" ? MAPS.length : SKINS.length;
+      const base = kind === "maps" ? "Maps" : "Skins";
+      t.textContent = `${base} (${count})`;
     });
     shopFilters.forEach((f) => {
       f.classList.toggle("active", f.dataset.rarity === shopRarityFilter);
@@ -1158,7 +1269,7 @@
     if (shopPreviewLabel) {
       shopPreviewLabel.textContent =
         shopTab === "maps"
-          ? `Map: ${map.name}`
+          ? `Map: ${map.name} · ${rarityLabel(map.rarity)}`
           : `Skin: ${skin.name} · ${rarityLabel(skin.rarity)}`;
     }
     // animate trail for preview
@@ -1169,128 +1280,152 @@
     drawSkinPreview(shopLivePreview, skin, map, shopTrailParticles, Math.sin(frames * 0.25));
   }
 
+  function appendShopCard(item, isMap) {
+    const owned = isMap ? ownedMaps.includes(item.id) : ownedSkins.includes(item.id);
+    const equipped = isMap ? equippedMapId === item.id : equippedSkinId === item.id;
+    const card = document.createElement("article");
+    card.className =
+      "skin-card rarity-" +
+      item.rarity +
+      (equipped ? " equipped" : "") +
+      (owned ? "" : " locked");
+    card.dataset.id = item.id;
+
+    const badge = document.createElement("span");
+    badge.className = "rarity-badge rarity-" + item.rarity;
+    badge.textContent = rarityLabel(item.rarity);
+
+    const preview = document.createElement("canvas");
+    preview.className = "skin-preview";
+    preview.width = 140;
+    preview.height = 72;
+    preview.setAttribute("aria-hidden", "true");
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "skin-name";
+    nameEl.textContent = item.name;
+
+    const meta = document.createElement("div");
+    meta.className = "skin-meta";
+    if (owned) {
+      meta.innerHTML = equipped
+        ? '<span class="skin-price">Equipped</span>'
+        : "<span>Owned</span>";
+    } else {
+      const curClass = isGemsCurrency(item) ? "skin-price gems" : "skin-price";
+      meta.innerHTML = `<span class="${curClass}">${priceLabel(item)}</span>`;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "skin-actions";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "skin-btn";
+
+    const selectPreview = () => {
+      if (isMap) shopPreviewMapId = item.id;
+      else shopPreviewSkinId = item.id;
+      updateShopLivePreview();
+    };
+    card.addEventListener("click", selectPreview);
+
+    if (equipped) {
+      btn.classList.add("equipped");
+      btn.textContent = "Equipped";
+      btn.disabled = true;
+    } else if (owned) {
+      btn.classList.add("equip");
+      btn.textContent = "Equip";
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (isMap) {
+          equippedMapId = item.id;
+          persistEquippedMap();
+          applyMapPalette(getEquippedMap());
+          shopPreviewMapId = item.id;
+        } else {
+          equippedSkinId = item.id;
+          persistEquippedSkin();
+          shopPreviewSkinId = item.id;
+          trailParticles = [];
+        }
+        renderShop();
+      });
+    } else {
+      btn.classList.add("buy");
+      if (isGemsCurrency(item)) btn.classList.add("buy-gems");
+      const afford = canAfford(item);
+      btn.textContent = afford
+        ? "Buy"
+        : isGemsCurrency(item)
+          ? "Need Gems"
+          : "Need coins";
+      btn.disabled = !afford;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!canAfford(item)) return;
+        if (isMap && ownedMaps.includes(item.id)) return;
+        if (!isMap && ownedSkins.includes(item.id)) return;
+        if (!spendForItem(item)) return;
+        if (isMap) {
+          ownedMaps.push(item.id);
+          persistOwnedMaps();
+          equippedMapId = item.id;
+          persistEquippedMap();
+          applyMapPalette(getEquippedMap());
+          shopPreviewMapId = item.id;
+        } else {
+          ownedSkins.push(item.id);
+          persistOwnedSkins();
+          equippedSkinId = item.id;
+          persistEquippedSkin();
+          shopPreviewSkinId = item.id;
+          trailParticles = [];
+        }
+        renderShop();
+      });
+    }
+
+    actions.appendChild(btn);
+    card.appendChild(badge);
+    card.appendChild(preview);
+    card.appendChild(nameEl);
+    card.appendChild(meta);
+    card.appendChild(actions);
+    shopGrid.appendChild(card);
+    if (isMap) drawMapPreview(preview, item);
+    else drawSkinPreview(preview, item, MAP_BY_ID[item.id] || getEquippedMap(), null, 0);
+  }
+
   function renderShop() {
     shopGrid.innerHTML = "";
     syncCoinHUD();
     syncShopChrome();
     const catalog = shopTab === "maps" ? MAPS : SKINS;
+    const isMap = shopTab === "maps";
     let items = sortByRarity(catalog);
     if (shopRarityFilter !== "all") {
       items = items.filter((it) => it.rarity === shopRarityFilter);
     }
 
-    for (const item of items) {
-      const isMap = shopTab === "maps";
-      const owned = isMap ? ownedMaps.includes(item.id) : ownedSkins.includes(item.id);
-      const equipped = isMap ? equippedMapId === item.id : equippedSkinId === item.id;
-      const card = document.createElement("article");
-      card.className =
-        "skin-card rarity-" +
-        item.rarity +
-        (equipped ? " equipped" : "") +
-        (owned ? "" : " locked");
-      card.dataset.id = item.id;
-
-      const badge = document.createElement("span");
-      badge.className = "rarity-badge rarity-" + item.rarity;
-      badge.textContent = rarityLabel(item.rarity);
-
-      const preview = document.createElement("canvas");
-      preview.className = "skin-preview";
-      preview.width = 140;
-      preview.height = 72;
-      preview.setAttribute("aria-hidden", "true");
-
-      const nameEl = document.createElement("div");
-      nameEl.className = "skin-name";
-      nameEl.textContent = item.name;
-
-      const meta = document.createElement("div");
-      meta.className = "skin-meta";
-      if (owned) {
-        meta.innerHTML = equipped
-          ? '<span class="skin-price">Equipped</span>'
-          : "<span>Owned</span>";
-      } else {
-        const curClass = item.currency === "stardust" ? "skin-price stardust" : "skin-price";
-        meta.innerHTML = `<span class="${curClass}">${priceLabel(item)}</span>`;
+    if (shopRarityFilter === "all") {
+      for (const rarity of RARITY_SECTIONS) {
+        const group = items.filter((it) => it.rarity === rarity);
+        if (!group.length) continue;
+        const header = document.createElement("div");
+        header.className = "shop-section-header rarity-" + rarity;
+        header.innerHTML =
+          `<span class="shop-section-title">${rarityLabel(rarity)}</span>` +
+          `<span class="shop-section-count">${group.length}</span>`;
+        shopGrid.appendChild(header);
+        for (const item of group) {
+          appendShopCard(item, isMap);
+        }
       }
-
-      const actions = document.createElement("div");
-      actions.className = "skin-actions";
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "skin-btn";
-
-      const selectPreview = () => {
-        if (isMap) shopPreviewMapId = item.id;
-        else shopPreviewSkinId = item.id;
-        updateShopLivePreview();
-      };
-      card.addEventListener("click", selectPreview);
-
-      if (equipped) {
-        btn.classList.add("equipped");
-        btn.textContent = "Equipped";
-        btn.disabled = true;
-      } else if (owned) {
-        btn.classList.add("equip");
-        btn.textContent = "Equip";
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (isMap) {
-            equippedMapId = item.id;
-            persistEquippedMap();
-            applyMapPalette(getEquippedMap());
-            shopPreviewMapId = item.id;
-          } else {
-            equippedSkinId = item.id;
-            persistEquippedSkin();
-            shopPreviewSkinId = item.id;
-            trailParticles = [];
-          }
-          renderShop();
-        });
-      } else {
-        btn.classList.add("buy");
-        if (item.currency === "stardust") btn.classList.add("buy-stardust");
-        const afford = canAfford(item);
-        btn.textContent = afford ? "Buy" : item.currency === "stardust" ? "Need Star Dust" : "Need coins";
-        btn.disabled = !afford;
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (!canAfford(item)) return;
-          if (isMap && ownedMaps.includes(item.id)) return;
-          if (!isMap && ownedSkins.includes(item.id)) return;
-          if (!spendForItem(item)) return;
-          if (isMap) {
-            ownedMaps.push(item.id);
-            persistOwnedMaps();
-            equippedMapId = item.id;
-            persistEquippedMap();
-            applyMapPalette(getEquippedMap());
-            shopPreviewMapId = item.id;
-          } else {
-            ownedSkins.push(item.id);
-            persistOwnedSkins();
-            equippedSkinId = item.id;
-            persistEquippedSkin();
-            shopPreviewSkinId = item.id;
-            trailParticles = [];
-          }
-          renderShop();
-        });
+    } else {
+      for (const item of items) {
+        appendShopCard(item, isMap);
       }
-
-      actions.appendChild(btn);
-      card.appendChild(badge);
-      card.appendChild(preview);
-      card.appendChild(nameEl);
-      card.appendChild(meta);
-      card.appendChild(actions);
-      shopGrid.appendChild(card);
-      if (isMap) drawMapPreview(preview, item);
-      else drawSkinPreview(preview, item, MAP_BY_ID[item.id] || getEquippedMap(), null, 0);
     }
     updateShopLivePreview();
   }
@@ -1342,6 +1477,28 @@
       renderShop();
     });
   });
+
+  if (btnBuyGems) {
+    btnBuyGems.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openGemsPage();
+    });
+  }
+  if (btnBuyGemsPromo) {
+    btnBuyGemsPromo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openGemsPage();
+    });
+  }
+  if (gemsBack) {
+    gemsBack.addEventListener("click", () => closePage(gemsPage));
+  }
+  if (gemsPage) {
+    gemsPage.addEventListener("click", (e) => {
+      if (e.target === gemsPage) closePage(gemsPage);
+    });
+  }
+  renderGemPacks();
 
   function showAdThen(callback) {
     adBlocking = true;
@@ -1398,7 +1555,7 @@
     pipeGap = PIPE_GAP_BASE;
     runDistance = 0;
     coinsEarnedThisRun = 0;
-    starDustEarnedThisRun = 0;
+    gemsEarnedThisRun = 0;
     trailParticles = [];
     bird.x = BIRD_X;
     bird.y = H / 2 - 20;
@@ -1451,6 +1608,7 @@
     if (!shopModal.classList.contains("hidden")) return;
     if (removeAdsPage && !removeAdsPage.classList.contains("hidden")) return;
     if (rankPage && !rankPage.classList.contains("hidden")) return;
+    if (gemsPage && !gemsPage.classList.contains("hidden")) return;
     if (!checkoutModal.classList.contains("hidden")) return;
     if (state === STATE.OVER) {
       if (overTimer > 20) {
@@ -1601,16 +1759,16 @@
     bird.vy = Math.min(bird.vy, 2);
 
     coinsEarnedThisRun = Math.floor(runDistance / PIXELS_PER_COIN);
-    starDustEarnedThisRun = Math.floor(score / PIPES_PER_STARDUST);
+    gemsEarnedThisRun = Math.floor(score / PIPES_PER_GEM);
     if (coinsEarnedThisRun > 0) {
       coins += coinsEarnedThisRun;
       persistCoins();
     }
-    if (starDustEarnedThisRun > 0) {
-      starDust += starDustEarnedThisRun;
-      persistStarDust();
+    if (gemsEarnedThisRun > 0) {
+      gems += gemsEarnedThisRun;
+      persistGems();
     }
-    if (coinsEarnedThisRun <= 0 && starDustEarnedThisRun <= 0) {
+    if (coinsEarnedThisRun <= 0 && gemsEarnedThisRun <= 0) {
       syncCoinHUD();
     }
 
@@ -2278,11 +2436,11 @@
 
       ctx.fillStyle = C.coin;
       ctx.fillText(`Coins +${coinsEarnedThisRun}`, W / 2, py + 112);
-      ctx.fillStyle = C.stardust;
-      ctx.fillText(`Star Dust +${starDustEarnedThisRun}`, W / 2, py + 132);
+      ctx.fillStyle = C.gem;
+      ctx.fillText(`Gems +${gemsEarnedThisRun}`, W / 2, py + 132);
       ctx.font = "12px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.fillText(`Bag ${coins} · Dust ${starDust}`, W / 2, py + 152);
+      ctx.fillText(`Bag ${coins} · Gems ${gems}`, W / 2, py + 152);
 
       if (!adsRemoved) {
         ctx.font = "12px Segoe UI, system-ui, sans-serif";

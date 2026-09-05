@@ -82,7 +82,7 @@ body {
 }
 
 #coin-hud,
-#stardust-hud {
+#gems-hud {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -100,13 +100,13 @@ body {
   color: #f4d35e;
 }
 
-#stardust-hud {
+#gems-hud {
   border: 1px solid rgba(192, 132, 252, 0.55);
   color: #e9d5ff;
 }
 
 .coin-glyph,
-.stardust-glyph {
+.gems-glyph {
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -118,7 +118,7 @@ body {
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
-.stardust-glyph {
+.gems-glyph {
   background: radial-gradient(circle at 35% 30%, #f5d0fe, #c084fc 45%, #7c3aed);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25), 0 0 6px rgba(192, 132, 252, 0.55);
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
@@ -505,7 +505,7 @@ body.playing .promo-banner {
 }
 
 .shop-coins,
-.shop-stardust {
+.shop-gems {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -521,7 +521,7 @@ body.playing .promo-banner {
   border: 1px solid rgba(244, 211, 94, 0.35);
 }
 
-.shop-stardust {
+.shop-gems {
   color: #e9d5ff;
   border: 1px solid rgba(192, 132, 252, 0.4);
 }
@@ -617,6 +617,129 @@ body.playing .promo-banner {
   color: #e9d5ff;
 }
 
+.btn-buy-gems {
+  border: 1px solid rgba(192, 132, 252, 0.55);
+  background: linear-gradient(180deg, #e9d5ff, #a78bfa);
+  color: #2e1065;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-buy-gems:hover {
+  filter: brightness(1.05);
+}
+
+.shop-section-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.shop-section-header.rarity-legendary {
+  background: rgba(234, 179, 8, 0.14);
+  border-color: rgba(250, 204, 21, 0.45);
+  color: #fde68a;
+}
+
+.shop-section-header.rarity-epic {
+  background: rgba(168, 85, 247, 0.14);
+  border-color: rgba(192, 132, 252, 0.4);
+  color: #e9d5ff;
+}
+
+.shop-section-header.rarity-rare {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.4);
+  color: #bfdbfe;
+}
+
+.shop-section-header.rarity-common {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #e2e8f0;
+}
+
+.shop-section-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.gems-page-intro {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.gems-packs {
+  display: grid;
+  gap: 12px;
+}
+
+.gem-pack-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(192, 132, 252, 0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.gem-pack-amount {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #e9d5ff;
+}
+
+.gem-pack-price {
+  margin: 4px 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f4d35e;
+}
+
+.gem-pack-price span {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.gem-pack-note {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.gem-pack-btn {
+  width: 100%;
+}
+
+.gems-promo-card {
+  margin-top: 12px;
+}
+
+.shop-tab {
+  font-weight: 700;
+}
+
+
 .rarity-badge {
   align-self: flex-start;
   font-size: 0.62rem;
@@ -669,11 +792,11 @@ body.playing .promo-banner {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.12);
 }
 
-.skin-price.stardust {
+.skin-price.gems {
   color: #c084fc;
 }
 
-.skin-btn.buy-stardust {
+.skin-btn.buy-gems {
   background: linear-gradient(180deg, #e9d5ff, #a78bfa);
   color: #2e1065;
 }

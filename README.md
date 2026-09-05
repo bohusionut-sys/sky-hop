@@ -23,6 +23,7 @@ No build step, no dependencies, no CDN assets.
 - **Shop** (top-left) — unlock/equip **skins** and **maps**; live preview with fairy trails
 - **Rank** (top-center) — full-page daily/weekly/monthly leaderboards
 - **No Ads** (mid-right) — full-page £1.99 remove-ads offer
+- **Buy Gems** — from Shop header or Remove Ads page
 
 ## Gameplay
 
@@ -36,34 +37,43 @@ No build step, no dependencies, no CDN assets.
 | Currency | How to earn | Spent on |
 |----------|-------------|----------|
 | **Coins** | Distance traveled (`1` per 40px) | Common / Rare / Epic skins & maps |
-| **Star Dust** | `1` per **8 pipes** cleared in a run | Legendary skins & maps only |
+| **Gems** | `1` per **25 pipes** cleared, or Buy Gems packs | Legendary skins & maps only |
 
-Balances show in the **top-right** HUD (coins + Star Dust).
+Balances show in the **top-right** HUD (coins + gems). Legacy `skyHopStarDust` migrates once into `skyHopGems`.
+
+### Gem packs (simulated GBP)
+
+| Pack | Price |
+|------|-------|
+| 5 Gems | £0.99 |
+| 15 Gems | £1.99 |
+| 40 Gems | £4.99 |
 
 ### Skin & map rarities
 
-Skins and maps share the same names/tiers (one map themed to each costume).
+Skins and maps share the same names/tiers (one map themed to each costume). Shop grids group items under **Legendary / Epic / Rare / Common** section headers.
 
-| Rarity | Skins / Maps | Price |
-|--------|--------------|-------|
-| **Common** (grey) | Coral Hopper (free), Bone Glider (30), Mohawk Riot (35), Hot Sauce (40), Inferno Fiend (45), Frost Shard (45), Chrome Bot (50), Volt Eel (50), Shadow Blade (55) | Coins |
-| **Rare** (blue) | Neon Pulse (120), Nightfang (150), Pixel Phantom (160), Lava Core (180) | Coins |
-| **Epic** (purple) | Candy Crash (350), Ghost Drift (400), Golden Idol (500) | Coins |
-| **Legendary** (gold) | Toxic Slime (12), Void Glitch (15), Cosmic Drift (20), Obsidian King (25) | **Star Dust** |
+| Rarity | Examples | Price |
+|--------|----------|-------|
+| **Common** | Coral Hopper (free), Bone Glider (40), Mohawk Riot (55), Hot Sauce (70), Inferno Fiend (85), Frost Shard (95), Chrome Bot (110), Volt Eel (125), Shadow Blade (140) | Coins |
+| **Rare** | Neon Pulse (480), Nightfang (620), Pixel Phantom (780), Lava Core (950) | Coins |
+| **Epic** | Candy Crash (2200), Ghost Drift (2800), Golden Idol (3600) | Coins |
+| **Legendary** | Toxic Slime (25), Void Glitch (35), Cosmic Drift (50), Obsidian King (75) | **Gems only** |
 
-Fairy trails behind the bird scale with rarity (simple sparkles → rich themed dust). Equipped maps recolor sky, hills, pipes, and ground procedurally.
+Fairy trails behind the bird scale with rarity. Equipped maps recolor sky, hills, pipes, and ground procedurally.
 
 ## Features
 
-- **Skin shop** — ~20 procedural skins with rarity badges, filters, Buy/Equip
+- **Skin shop** — ~20 procedural skins with rarity sections, filters, Buy/Equip
 - **Map shop** — ~20 themed stages, same rarity/pricing as paired skins
 - **Fairy trails** — per-skin particle trails in gameplay + live shop preview
 - **Local leaderboards** — Daily / Weekly / Monthly on this device
 - **Ads (simulated)** — interstitial every 3 runs (skipped if ads removed)
 - **Remove ads** — £1.99 GBP via **No Ads** full-page popup (simulated purchase)
+- **Buy Gems** — simulated gem packs for legendary unlocks
 
 ## Files
 
-- `index.html` — page shell, dual-currency HUD, shop tabs, leaderboard, promo, overlays
-- `style.css` — responsive layout + rarity badge styling
+- `index.html` — page shell, dual-currency HUD, shop tabs, gems page, leaderboard, promo, overlays
+- `style.css` — responsive layout + rarity section styling
 - `game.js` — game loop, physics, skins, maps, trails, persistence
