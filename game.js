@@ -671,32 +671,32 @@
   // --- Music (~20) — one track per skin, same ids/names/pricing ---
   // Procedural Web Audio loops; vibe drives timbre / rhythm (no external files).
   const MUSIC_VIBES = {
-    // All tracks are arcade/chiptune-flavored; style still tints motif + drums
-    coral: { style: "arcade", bpm: 150, root: 196, wave: "square", brightness: 0.75 },
-    neon: { style: "arcadeAttack", bpm: 172, root: 147, wave: "square", brightness: 0.88 },
-    bone: { style: "arcadeDark", bpm: 140, root: 110, wave: "square", brightness: 0.65 },
-    infernal: { style: "arcadeAttack", bpm: 175, root: 98, wave: "square", brightness: 0.88 },
-    void: { style: "arcadeAttack", bpm: 168, root: 82, wave: "square", brightness: 0.86 },
-    mohawk: { style: "arcadeAttack", bpm: 180, root: 123, wave: "square", brightness: 0.9 },
-    vampire: { style: "arcadeDark", bpm: 138, root: 87, wave: "square", brightness: 0.62 },
-    chrome: { style: "arcade", bpm: 158, root: 165, wave: "square", brightness: 0.78 },
-    hotsauce: { style: "arcadeAttack", bpm: 178, root: 131, wave: "square", brightness: 0.88 },
-    assassin: { style: "arcadeAttack", bpm: 170, root: 110, wave: "square", brightness: 0.84 },
-    slime: { style: "arcade", bpm: 152, root: 123, wave: "square", brightness: 0.74 },
-    golden: { style: "arcadeBoss", bpm: 142, root: 175, wave: "square", brightness: 0.85 },
-    ice: { style: "arcade", bpm: 156, root: 196, wave: "square", brightness: 0.76 },
-    pixel: { style: "arcade", bpm: 168, root: 220, wave: "square", brightness: 0.84 },
-    cosmic: { style: "arcadeBoss", bpm: 136, root: 147, wave: "square", brightness: 0.72 },
-    lava: { style: "arcadeAttack", bpm: 176, root: 98, wave: "square", brightness: 0.87 },
-    ghost: { style: "arcadeDark", bpm: 132, root: 131, wave: "square", brightness: 0.6 },
-    eel: { style: "arcade", bpm: 162, root: 185, wave: "square", brightness: 0.8 },
-    candy: { style: "arcade", bpm: 172, root: 233, wave: "square", brightness: 0.86 },
-    obsidian: { style: "arcadeAttack", bpm: 164, root: 87, wave: "square", brightness: 0.9 },
+    // One distinct identity per skin: unique style + bpm + wave + root + groove
+    coral: { style: "tropical", bpm: 118, root: 196, wave: "triangle", brightness: 0.78, attack: false },
+    neon: { style: "synth", bpm: 128, root: 110, wave: "sawtooth", brightness: 0.92, attack: true },
+    bone: { style: "hollow", bpm: 92, root: 98, wave: "triangle", brightness: 0.48, attack: false },
+    infernal: { style: "rumble", bpm: 148, root: 73, wave: "sawtooth", brightness: 0.7, attack: true },
+    void: { style: "ambient", bpm: 78, root: 55, wave: "sine", brightness: 0.35, attack: true },
+    mohawk: { style: "riot", bpm: 176, root: 123, wave: "square", brightness: 0.95, attack: true },
+    vampire: { style: "noir", bpm: 96, root: 82, wave: "triangle", brightness: 0.42, attack: false },
+    chrome: { style: "robot", bpm: 134, root: 165, wave: "square", brightness: 0.8, attack: false },
+    hotsauce: { style: "spicy", bpm: 158, root: 131, wave: "sawtooth", brightness: 0.9, attack: true },
+    assassin: { style: "stealth", bpm: 102, root: 98, wave: "sine", brightness: 0.4, attack: true },
+    slime: { style: "wobble", bpm: 108, root: 110, wave: "triangle", brightness: 0.68, attack: false },
+    golden: { style: "majestic", bpm: 112, root: 175, wave: "triangle", brightness: 0.82, attack: false },
+    ice: { style: "crystal", bpm: 126, root: 262, wave: "sine", brightness: 0.88, attack: false },
+    pixel: { style: "chip", bpm: 164, root: 220, wave: "square", brightness: 0.86, attack: false },
+    cosmic: { style: "ethereal", bpm: 84, root: 147, wave: "sine", brightness: 0.55, attack: false },
+    lava: { style: "tense", bpm: 142, root: 87, wave: "sawtooth", brightness: 0.78, attack: true },
+    ghost: { style: "ethereal", bpm: 72, root: 131, wave: "sine", brightness: 0.32, attack: false },
+    eel: { style: "electric", bpm: 140, root: 185, wave: "sawtooth", brightness: 0.84, attack: false },
+    candy: { style: "playful", bpm: 152, root: 247, wave: "square", brightness: 0.9, attack: false },
+    obsidian: { style: "glitch", bpm: 122, root: 65, wave: "square", brightness: 0.75, attack: true },
   };
 
   const MUSIC = SKINS.map((s) => {
     const vibe = MUSIC_VIBES[s.id] || MUSIC_VIBES.coral;
-    const attack = vibe.style === "arcadeAttack";
+    const attack = !!vibe.attack;
     return {
       id: s.id,
       name: attack ? s.name + " · Attack" : s.name,
@@ -1030,20 +1030,36 @@
     pent: [0, 2, 4, 7, 9],
     dark: [0, 1, 3, 5, 7, 8, 10],
     chip: [0, 3, 5, 7, 10],
+    blues: [0, 3, 5, 6, 7, 10],
+    lydian: [0, 2, 4, 6, 7, 9, 11],
+    phrygian: [0, 1, 3, 5, 7, 8, 10],
+    harmonic: [0, 2, 3, 5, 7, 8, 11],
   };
 
   function styleScale(style) {
-    if (style === "arcade" || style === "arcadeBoss" || style === "chip" || style === "playful" || style === "robot") {
+    if (style === "chip" || style === "playful" || style === "robot" || style === "arcade" || style === "arcadeBoss") {
       return MUSIC_SCALES.chip;
     }
-    if (style === "arcadeAttack" || style === "arcadePunk" || style === "synth" || style === "spicy" || style === "riot") {
+    if (style === "synth" || style === "electric" || style === "arcadeAttack" || style === "arcadePunk") {
       return MUSIC_SCALES.pent;
     }
-    if (style === "arcadeDark" || style === "noir" || style === "glitch") {
+    if (style === "spicy" || style === "wobble" || style === "rumble") {
+      return MUSIC_SCALES.blues;
+    }
+    if (style === "riot" || style === "tense" || style === "glitch") {
+      return MUSIC_SCALES.phrygian;
+    }
+    if (style === "noir" || style === "hollow" || style === "stealth" || style === "arcadeDark") {
       return MUSIC_SCALES.dark;
     }
-    if (style === "tropical" || style === "majestic" || style === "crystal") {
+    if (style === "vampire" || style === "infernal") {
+      return MUSIC_SCALES.harmonic;
+    }
+    if (style === "tropical" || style === "majestic" || style === "regal") {
       return MUSIC_SCALES.major;
+    }
+    if (style === "crystal" || style === "ethereal" || style === "cosmic" || style === "ambient") {
+      return MUSIC_SCALES.lydian;
     }
     return MUSIC_SCALES.minor;
   }
@@ -1184,17 +1200,44 @@
       arcadeAttack: [0, 0, 0, -1, 5, 5, 0, -1, 7, 7, 0, -1, 5, 0, 10, -1],
       tropical: [0, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1, 7, -1, 5, -1],
       synth: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 3, -1, 5, -1, 0, -1],
-      default: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
+      hollow: [0, -1, -1, -1, -1, -1, 5, -1, 0, -1, -1, -1, -1, -1, 3, -1],
+      tense: [0, 0, -1, 3, 0, -1, 5, -1, 0, 3, -1, 5, 0, -1, 7, -1],
+      glitch: [0, 7, -1, 3, 0, -1, 10, 5, 0, -1, 3, 7, -1, 5, 0, -1],
+      riot: [0, 0, 0, -1, 3, 3, 0, -1, 5, 5, 0, -1, 0, 3, 5, -1],
+      noir: [0, -1, -1, -1, 3, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1],
+      robot: [0, -1, 0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 7, -1, 5, -1],
+      spicy: [0, 0, -1, 5, 0, -1, 3, -1, 5, 5, -1, 0, 3, -1, 5, -1],
+      stealth: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
       wobble: [0, 0, -1, 0, 3, 3, -1, 3, 5, 5, -1, 5, 0, 0, -1, 0],
+      majestic: [0, -1, -1, -1, 4, -1, -1, -1, 7, -1, -1, -1, 5, -1, 4, -1],
+      crystal: [0, -1, -1, 4, -1, -1, 7, -1, 0, -1, -1, 5, -1, -1, 9, -1],
       chip: [0, -1, 0, -1, 5, -1, 0, -1, 7, -1, 5, -1, 0, -1, 5, -1],
       ambient: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
+      rumble: [0, 0, 0, -1, 0, 0, 3, -1, 5, 5, 5, -1, 0, 0, 3, -1],
+      ethereal: [0, -1, -1, -1, -1, -1, 7, -1, -1, -1, -1, -1, 5, -1, -1, -1],
+      electric: [0, -1, 5, -1, 0, -1, 7, -1, 0, -1, 5, -1, 3, -1, 0, -1],
+      playful: [0, -1, 0, -1, 5, -1, 4, -1, 0, -1, 7, -1, 5, -1, 0, -1],
+      regal: [0, -1, -1, 4, -1, -1, 7, -1, 0, -1, -1, 5, -1, -1, 4, -1],
+      default: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
     };
     const bMotif = bassMotif[style] || bassMotif.default;
     const motif = motifs[style] || motifs.arcade || motifs.tropical;
 
+    // Second-bar melody lift styles (call/response feel)
+    const liftStyles = new Set([
+      "chip", "playful", "crystal", "tropical", "majestic", "arcade", "arcadeBoss", "candy", "electric",
+    ]);
+    const busy = new Set([
+      "arcade", "arcadePunk", "arcadeBoss", "arcadeAttack", "riot", "synth", "spicy", "chip", "playful", "electric", "robot",
+    ]);
+    const sparse = new Set(["ambient", "ethereal", "stealth", "noir", "hollow"]);
+    const halfTime = new Set(["rumble", "tense", "noir", "hollow"]);
+    const tripleHat = new Set(["tropical", "playful", "wobble"]);
+    const fourOnFloor = new Set(["synth", "spicy", "electric"]);
+
     for (let i = 0; i < steps; i++) {
       const mi = i % 16;
-      const octaveBoost = i >= 16 && (style === "chip" || style === "playful" || style === "crystal" || String(style).startsWith("arcade")) ? 12 : 0;
+      const octaveBoost = i >= 16 && liftStyles.has(style) ? 12 : 0;
 
       // Lead melody from motif (skip rests)
       const md = motif[mi];
@@ -1202,38 +1245,46 @@
         const deg = scale[md % scale.length] + Math.floor(md / scale.length) * 12;
         lead[i] = deg + octaveBoost;
       }
+      // Sparse styles: thin the lead further on odd bars
+      if (sparse.has(style) && i % 2 === 1) lead[i] = -1;
+      // Attack / glitch: stutter some notes into doubles on bar 2
+      if ((style === "glitch" || style === "riot") && i >= 16 && mi % 4 === 0 && lead[i] < 0) {
+        lead[i] = scale[0] + (i % 8 === 0 ? 12 : 0);
+      }
 
       // Bass
       const bd = bMotif[mi];
       if (bd >= 0) bass[i] = scale[bd % scale.length];
 
-      // Pad chord roots on downbeats
-      if (i % 8 === 0) chord[i] = scale[0];
-      else if (i % 8 === 4) chord[i] = scale[Math.min(3, scale.length - 1)];
+      // Pad chord roots — denser for majestic/crystal, thinner for stealth
+      if (sparse.has(style)) {
+        if (i % 16 === 0) chord[i] = scale[0];
+        else if (i % 16 === 8) chord[i] = scale[Math.min(4, scale.length - 1)];
+      } else if (style === "majestic" || style === "crystal" || style === "regal") {
+        if (i % 4 === 0) chord[i] = scale[(i / 4) % scale.length | 0];
+      } else {
+        if (i % 8 === 0) chord[i] = scale[0];
+        else if (i % 8 === 4) chord[i] = scale[Math.min(3, scale.length - 1)];
+      }
 
-      // Kick / snare groove — musical, not hat spam
-      const busy =
-        style === "arcade" ||
-        style === "arcadePunk" ||
-        style === "arcadeBoss" ||
-        style === "arcadeAttack" ||
-        style === "riot" ||
-        style === "synth" ||
-        style === "spicy" ||
-        style === "chip" ||
-        style === "playful" ||
-        style === "electric";
-      const sparse =
-        style === "ambient" ||
-        style === "ethereal" ||
-        style === "stealth" ||
-        style === "noir" ||
-        style === "hollow";
-      if (sparse) {
+      // Kick / snare / hat — distinct grooves per family
+      if (sparse.has(style)) {
         if (i % 8 === 0) kick[i] = 1;
-        if (i % 16 === 8) snare[i] = 0.7;
-        if (i % 4 === 2) hat[i] = 0.15;
-      } else if (busy) {
+        if (i % 16 === 8) snare[i] = 0.55;
+        if (i % 8 === 4) hat[i] = 0.12;
+      } else if (halfTime.has(style)) {
+        if (i % 8 === 0) kick[i] = 1;
+        if (i % 8 === 4) snare[i] = 0.9;
+        if (i % 4 === 2) hat[i] = 0.18;
+      } else if (fourOnFloor.has(style)) {
+        if (i % 2 === 0) kick[i] = 0.85;
+        if (i % 8 === 4) snare[i] = 1;
+        if (i % 2 === 1) hat[i] = 0.28;
+      } else if (tripleHat.has(style)) {
+        if (i % 4 === 0) kick[i] = 1;
+        if (i % 8 === 4) snare[i] = 0.8;
+        if (i % 3 === 0) hat[i] = 0.2;
+      } else if (busy.has(style)) {
         if (i % 4 === 0) kick[i] = 1;
         if (i % 8 === 4) snare[i] = 1;
         if (i % 2 === 1) hat[i] = 0.22;
@@ -1243,7 +1294,10 @@
         if (i % 4 === 2) hat[i] = 0.2;
       }
       if (style === "glitch" && i % 5 === 0) kick[i] = 1;
+      if (style === "glitch" && i % 7 === 3) snare[i] = 0.7;
       if (style === "wobble" && i % 2 === 0) kick[i] = Math.max(kick[i], 0.7);
+      if (style === "riot" && i % 4 === 2) kick[i] = Math.max(kick[i], 0.6);
+      if (style === "robot" && i % 8 === 6) snare[i] = 0.5;
     }
 
     return { bass, lead, chord, kick, snare, hat, steps, vibe };
