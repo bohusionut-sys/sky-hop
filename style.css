@@ -48,16 +48,8 @@ body {
   justify-content: center;
   touch-action: none;
   user-select: none;
-  --btn-shop-top: 10px;
-  --btn-shop-left: 10px;
-  --btn-settings-top: 48px;
-  --btn-settings-left: 10px;
-  --btn-rank-top: 10px;
-  --btn-rank-left: 50%;
   --btn-noads-top: 42%;
   --btn-noads-right: 10px;
-  --btn-challenges-top: 48px;
-  --btn-challenges-left: 50%;
 }
 
 #game {
@@ -133,42 +125,42 @@ body {
   border-radius: 0;
 }
 
-/* Frame overlay buttons — tweak via CSS vars from screenshot marks */
-#btn-shop {
+/* Stacked frame rails — reliable hit targets above canvas */
+.frame-rail {
   position: absolute;
-  top: var(--btn-shop-top);
-  left: var(--btn-shop-left);
-  z-index: 6;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
 }
 
-/* Settings — directly under Shop (same left column) */
-#btn-settings,
-.frame-btn-settings {
-  position: absolute;
-  top: var(--btn-settings-top);
-  left: var(--btn-settings-left);
-  z-index: 6;
+.frame-rail-left {
+  top: 10px;
+  left: 10px;
+  align-items: flex-start;
 }
 
-/* YELLOW mark: top-center between Shop and coin HUD */
-#btn-rank,
-.frame-btn-rank {
-  position: absolute;
-  top: var(--btn-rank-top);
-  left: var(--btn-rank-left);
+.frame-rail-center {
+  top: 10px;
+  left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  align-items: center;
 }
 
-/* Challenges: under Rank, same center column */
-#btn-challenges,
-.frame-btn-challenges {
-  position: absolute;
-  top: var(--btn-challenges-top);
-  left: var(--btn-challenges-left);
-  transform: translateX(-50%);
-  z-index: 6;
+.frame-rail .hud-btn,
+.frame-rail .frame-btn {
+  position: static;
+  transform: none;
   max-width: 120px;
+}
+
+#btn-shop,
+#btn-settings,
+#btn-rank,
+#btn-challenges {
+  position: static;
+  z-index: auto;
 }
 
 /* RED mark: mid-right open sky beside bird */
@@ -178,14 +170,15 @@ body {
   top: var(--btn-noads-top);
   right: var(--btn-noads-right);
   left: auto;
-  z-index: 6;
+  z-index: 30;
 }
 
 .frame-btn {
   white-space: nowrap;
-  max-width: 110px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
+  pointer-events: auto;
 }
 
 #btn-remove-ads.ads-cleared {
@@ -194,21 +187,30 @@ body {
 }
 
 /* Hide frame nav while playing; show on ready/over */
-body.playing #btn-rank,
-body.playing #btn-challenges,
+body.playing .frame-rail-center,
 body.playing #btn-remove-ads {
   opacity: 0;
   pointer-events: none;
 }
 
-body.ready #btn-rank,
-body.ready #btn-challenges,
+body.ready .frame-rail-center,
 body.ready #btn-remove-ads,
-body.over #btn-rank,
-body.over #btn-challenges,
+body.over .frame-rail-center,
 body.over #btn-remove-ads {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Shop + Settings always available on ready/over; keep visible during play too for settings access? keep shop/settings always clickable */
+body.playing .frame-rail-left {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.skin-btn.preview {
+  background: rgba(56, 189, 248, 0.25);
+  color: #bae6fd;
+  border: 1px solid rgba(56, 189, 248, 0.45);
 }
 
 .hud-btn {

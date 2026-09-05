@@ -1064,7 +1064,9 @@
   function applyMusicGains() {
     if (!musicEngine.master || !musicEngine.muteGain) return;
     musicEngine.master.gain.value = Math.max(0, Math.min(1, musicVolume)) * 0.22;
-    musicEngine.muteGain.gain.value = musicMuted ? 0 : 1;
+    // Shop previews stay audible even if Background music is toggled off
+    const audible = musicEngine.previewing || !musicMuted;
+    musicEngine.muteGain.gain.value = audible ? 1 : 0;
   }
 
   /** Short haptic pulse when vibration is enabled and supported. */
@@ -1293,8 +1295,9 @@
   function startMusicTrack(trackId, asPreview) {
     const track = MUSIC_BY_ID[trackId] || getEquippedMusic();
     if (!track) return;
+    // Shop previews always play so players can audition before buying.
+    // Only block non-preview BGM when music is muted/disabled.
     if (musicMuted && !asPreview) {
-      // Still allow preview in shop when muted? Prefer respect mute always.
       stopMusicLoop();
       return;
     }
@@ -1305,7 +1308,6 @@
       return;
     }
     stopMusicLoop();
-    if (musicMuted) return;
     musicEngine.track = track;
     musicEngine.pattern = buildMusicPattern(track);
     musicEngine.playingId = track.id;
@@ -1873,6 +1875,7 @@
     if (!el) return;
     el.classList.add("hidden");
     el.setAttribute("aria-hidden", "true");
+    el.style.display = "";
   }
 
   function openRemoveAdsPage() {
@@ -1886,7 +1889,14 @@
   }
 
   function openSettingsPage() {
+    if (!settingsPage) {
+      console.warn("settings-page missing");
+      return;
+    }
     syncSettingsUI();
+    settingsPage.classList.remove("hidden");
+    settingsPage.setAttribute("aria-hidden", "false");
+    settingsPage.style.display = "flex";
     openPage(settingsPage);
   }
 
@@ -2205,12 +2215,20 @@
     });
   });
 
-  if (btnSettings) {
-    btnSettings.addEventListener("click", (e) => {
+  function handleOpenSettings(e) {
+    if (e) {
+      e.preventDefault();
       e.stopPropagation();
-      resumeMusicOnGesture();
-      playSfx("ui");
-      openSettingsPage();
+    }
+    resumeMusicOnGesture();
+    playSfx("ui");
+    openSettingsPage();
+  }
+  if (btnSettings) {
+    btnSettings.addEventListener("click", handleOpenSettings);
+    btnSettings.addEventListener("pointerup", (e) => {
+      // Avoid double-open with click on some devices: only use pointerup for touch
+      if (e.pointerType === "touch") handleOpenSettings(e);
     });
   }
   if (settingsBack) {
@@ -2427,7 +2445,7 @@
           : shopTab === "trails"
             ? "Light trails grouped by rarity. Equip independently of your skin. Legendaries need <strong>Stardust</strong>."
             : shopTab === "music"
-              ? "Procedural tracks themed to each skin. Preview on select; equip for background music. Legendaries need <strong>Stardust</strong>."
+              ? "Tap <strong>Preview</strong> to audition any track before buying — locked tracks included. Equip for background music. Legendaries need <strong>Stardust</strong>."
               : "Character skins grouped by rarity. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries.";
     }
   }
@@ -2533,11 +2551,27 @@
       } else if (isMusic) {
         shopPreviewMusicId = item.id;
         resumeMusicOnGesture();
-        syncBackgroundMusic();
+        startMusicTrack(item.id, true);
       } else shopPreviewSkinId = item.id;
       updateShopLivePreview();
     };
     card.addEventListener("click", selectPreview);
+
+    if (isMusic) {
+      const previewBtn = document.createElement("button");
+      previewBtn.type = "button";
+      previewBtn.className = "skin-btn preview";
+      previewBtn.textContent = "Preview";
+      previewBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shopPreviewMusicId = item.id;
+        resumeMusicOnGesture();
+        startMusicTrack(item.id, true);
+        updateShopLivePreview();
+        playSfx("ui");
+      });
+      actions.appendChild(previewBtn);
+    }
 
     if (equipped) {
       btn.classList.add("equipped");

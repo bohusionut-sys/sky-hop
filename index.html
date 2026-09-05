@@ -12,12 +12,16 @@
   <div id="app">
     <div id="main-col">
       <div id="wrap">
-        <!-- Positions easy to tweak: --btn-remove-ads-*, --btn-rank-* in CSS -->
-        <button type="button" id="btn-shop" class="hud-btn frame-btn" aria-label="Open shop">Shop</button>
-        <button type="button" id="btn-settings" class="hud-btn frame-btn frame-btn-settings" aria-label="Open settings">Settings</button>
+        <!-- Left rail: Shop + Settings stacked -->
+        <div class="frame-rail frame-rail-left" aria-label="Shop and settings">
+          <button type="button" id="btn-shop" class="hud-btn frame-btn" aria-label="Open shop">Shop</button>
+          <button type="button" id="btn-settings" class="hud-btn frame-btn frame-btn-settings" aria-label="Open settings">Settings</button>
+        </div>
         <button type="button" id="btn-remove-ads" class="hud-btn frame-btn frame-btn-remove" aria-label="Open remove ads">No Ads</button>
-        <button type="button" id="btn-rank" class="hud-btn frame-btn frame-btn-rank" aria-label="Open ranks">★ Rank</button>
-        <button type="button" id="btn-challenges" class="hud-btn frame-btn frame-btn-challenges" aria-label="Open challenges">Challenges</button>
+        <div class="frame-rail frame-rail-center" aria-label="Rank and challenges">
+          <button type="button" id="btn-rank" class="hud-btn frame-btn frame-btn-rank" aria-label="Open ranks">★ Rank</button>
+          <button type="button" id="btn-challenges" class="hud-btn frame-btn frame-btn-challenges" aria-label="Open challenges">Challenges</button>
+        </div>
 
         <div id="currency-hud" aria-live="polite">
           <div id="coin-hud" title="Coin balance">
