@@ -4031,12 +4031,12 @@
       ctx.textAlign = "center";
       ctx.font = "bold 44px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = C.hudShadow;
-      ctx.fillText("Sky Hop", W / 2 + 2, 120 + 2);
+      ctx.fillText("Sky Hop", W / 2 + 2, 178 + 2);
       ctx.fillStyle = C.accent;
-      ctx.fillText("Sky Hop", W / 2, 120);
+      ctx.fillText("Sky Hop", W / 2, 178);
       ctx.font = "600 16px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.fillText("Tap · Click · Space · ↑", W / 2, 158);
+      ctx.fillText("Tap · Click · Space · ↑", W / 2, 216);
 
       const pw = 220;
       const ph = 70;
