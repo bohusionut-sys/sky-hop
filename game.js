@@ -59,13 +59,14 @@
 
   // Simulated Stardust packs (GBP)
   const STARDUST_PACKS = [
-    { id: "pack5", amount: 5, priceGbp: "0.99", label: "5 Stardust" },
-    { id: "pack15", amount: 15, priceGbp: "1.99", label: "15 Stardust" },
-    { id: "pack40", amount: 40, priceGbp: "4.99", label: "40 Stardust" },
-    { id: "pack80", amount: 80, priceGbp: "8.99", label: "80 Stardust" },
-    { id: "pack150", amount: 150, priceGbp: "14.99", label: "150 Stardust" },
-    { id: "pack300", amount: 300, priceGbp: "24.99", label: "300 Stardust" },
+    { id: "pack5", productId: "skyhop_stardust_5", amount: 5, priceGbp: "0.99", label: "5 Stardust" },
+    { id: "pack15", productId: "skyhop_stardust_15", amount: 15, priceGbp: "1.99", label: "15 Stardust" },
+    { id: "pack40", productId: "skyhop_stardust_40", amount: 40, priceGbp: "4.99", label: "40 Stardust" },
+    { id: "pack80", productId: "skyhop_stardust_80", amount: 80, priceGbp: "8.99", label: "80 Stardust" },
+    { id: "pack150", productId: "skyhop_stardust_150", amount: 150, priceGbp: "14.99", label: "150 Stardust" },
+    { id: "pack300", productId: "skyhop_stardust_300", amount: 300, priceGbp: "24.99", label: "300 Stardust" },
   ];
+  const REMOVE_ADS_PRODUCT_ID = "skyhop_remove_ads";
 
   /*
    * Free Stardust budget (engaged player, challenges + pipe earn):
@@ -2411,7 +2412,7 @@
         `<div class="stardust-pack-icon" aria-hidden="true"></div>` +
         `<p class="stardust-pack-amount">${pack.amount} Stardust</p>` +
         `<p class="stardust-pack-price">£${pack.priceGbp} <span>GBP</span></p>` +
-        `<p class="stardust-pack-note">Simulated purchase — no real payment.</p>`;
+        `<p class="stardust-pack-note">Play Billing when live on Android · simulated on web.</p>`;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "promo-btn stardust-pack-btn";
@@ -2553,24 +2554,78 @@
     checkoutModal.setAttribute("aria-hidden", "true");
   });
 
-  checkoutConfirm.addEventListener("click", () => {
-    if (checkoutKind === "stardust" && pendingStardustPack) {
-      stardust += pendingStardustPack.amount;
-      persistStardust();
-      pendingStardustPack = null;
-      checkoutKind = "ads";
-      checkoutModal.classList.add("hidden");
-      checkoutModal.setAttribute("aria-hidden", "true");
-      if (shopModal && !shopModal.classList.contains("hidden")) renderShop();
-      return;
-    }
+  function closeCheckoutModal() {
+    checkoutModal.classList.add("hidden");
+    checkoutModal.setAttribute("aria-hidden", "true");
+  }
+
+  function grantStardustPack(pack) {
+    stardust += pack.amount;
+    persistStardust();
+    pendingStardustPack = null;
+    checkoutKind = "ads";
+    closeCheckoutModal();
+    if (shopModal && !shopModal.classList.contains("hidden")) renderShop();
+  }
+
+  function grantRemoveAdsPurchase() {
     adsRemoved = true;
     persistAdsRemoved();
     runsSinceAd = 0;
     persistRuns();
-    checkoutModal.classList.add("hidden");
-    checkoutModal.setAttribute("aria-hidden", "true");
+    closeCheckoutModal();
     syncPromoUI();
+  }
+
+  function getBilling() {
+    return (typeof window !== "undefined" && window.SkyHopBilling) || null;
+  }
+
+  async function tryNativePurchase(productId) {
+    const billing = getBilling();
+    if (!billing || typeof billing.purchase !== "function") {
+      return { ok: false, simulated: true };
+    }
+    try {
+      return await billing.purchase(productId);
+    } catch (err) {
+      return { ok: false, simulated: true, error: (err && err.message) || String(err) };
+    }
+  }
+
+  checkoutConfirm.addEventListener("click", () => {
+    const run = async () => {
+      if (checkoutConfirm.disabled) return;
+      checkoutConfirm.disabled = true;
+      try {
+        if (checkoutKind === "stardust" && pendingStardustPack) {
+          const pack = pendingStardustPack;
+          const productId = pack.productId || ("skyhop_stardust_" + pack.amount);
+          const result = await tryNativePurchase(productId);
+          if (result.ok) {
+            grantStardustPack(pack);
+            return;
+          }
+          if (result.cancelled) return;
+          if (result.simulated) {
+            grantStardustPack(pack);
+          }
+          return;
+        }
+        const result = await tryNativePurchase(REMOVE_ADS_PRODUCT_ID);
+        if (result.ok) {
+          grantRemoveAdsPurchase();
+          return;
+        }
+        if (result.cancelled) return;
+        if (result.simulated) {
+          grantRemoveAdsPurchase();
+        }
+      } finally {
+        checkoutConfirm.disabled = false;
+      }
+    };
+    run();
   });
 
   // --- Shop UI ---
@@ -3189,12 +3244,94 @@
     return true;
   }
 
-  /**
-   * Simulated ad (interstitial or rewarded). Swap body for AdMob/IronSource later.
-   * opts: { title, subtitle, label, kind: "interstitial"|"rewarded", resetRunAdCounter }
-   */
-  function showAdThen(callback, opts) {
-    opts = opts || {};
+  let admobInitPromise = null;
+
+  function getAdConfig() {
+    return (typeof window !== "undefined" && window.SkyHopAdConfig) || null;
+  }
+
+  function getNativeAdMob() {
+    try {
+      if (!window.Capacitor || typeof window.Capacitor.isNativePlatform !== "function") {
+        return null;
+      }
+      if (!window.Capacitor.isNativePlatform()) return null;
+      const plugins = window.Capacitor.Plugins;
+      return (plugins && plugins.AdMob) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function canUseRealAds(kind) {
+    const cfg = getAdConfig();
+    if (!cfg || !cfg.USE_REAL_ADS) return false;
+    const AdMob = getNativeAdMob();
+    if (!AdMob) return false;
+    const unit =
+      kind === "rewarded" ? cfg.REWARDED_UNIT_ID : cfg.INTERSTITIAL_UNIT_ID;
+    if (cfg.isPlaceholder(unit)) return false;
+    return true;
+  }
+
+  /** Initialize Mobile Ads SDK early on native; preload interstitial + rewarded when IDs are real. */
+  function warmUpAdMob() {
+    const cfg = getAdConfig();
+    const AdMob = getNativeAdMob();
+    if (!cfg || !cfg.USE_REAL_ADS || !AdMob) return;
+    ensureAdMobInitialized(AdMob)
+      .then(() => {
+        const jobs = [];
+        if (
+          !cfg.isPlaceholder(cfg.INTERSTITIAL_UNIT_ID) &&
+          typeof AdMob.prepareInterstitial === "function"
+        ) {
+          jobs.push(AdMob.prepareInterstitial({ adId: cfg.INTERSTITIAL_UNIT_ID }));
+        }
+        if (
+          !cfg.isPlaceholder(cfg.REWARDED_UNIT_ID) &&
+          typeof AdMob.prepareRewardVideoAd === "function"
+        ) {
+          jobs.push(AdMob.prepareRewardVideoAd({ adId: cfg.REWARDED_UNIT_ID }));
+        }
+        return Promise.all(jobs);
+      })
+      .catch((err) => {
+        console.warn("[SkyHop] AdMob warm-up failed", err);
+      });
+  }
+
+  function ensureAdMobInitialized(AdMob) {
+    if (!admobInitPromise) {
+      admobInitPromise = Promise.resolve()
+        .then(() => {
+          if (typeof AdMob.initialize === "function") {
+            return AdMob.initialize({
+              initializeForTesting: false,
+              taggingForChildDirectedTreatment: false,
+              taggingForUnderAgeOfConsent: false,
+            });
+          }
+        })
+        .catch((err) => {
+          console.warn("[SkyHop] AdMob initialize failed", err);
+          admobInitPromise = null;
+          throw err;
+        });
+    }
+    return admobInitPromise;
+  }
+
+  function finishAdFlow(callback, opts, kind) {
+    adBlocking = false;
+    if (opts.resetRunAdCounter !== false && kind === "interstitial") {
+      runsSinceAd = 0;
+      persistRuns();
+    }
+    if (typeof callback === "function") callback();
+  }
+
+  function showSimulatedAdThen(callback, opts) {
     const kind = opts.kind || "interstitial";
     adBlocking = true;
     pendingStartAfterAd = false;
@@ -3228,14 +3365,85 @@
       clearInterval(tick);
       adOverlay.classList.add("hidden");
       adOverlay.setAttribute("aria-hidden", "true");
-      adBlocking = false;
-      if (opts.resetRunAdCounter !== false && kind === "interstitial") {
-        runsSinceAd = 0;
-        persistRuns();
-      }
-      if (typeof callback === "function") callback();
+      finishAdFlow(callback, opts, kind);
     };
     adContinue.addEventListener("click", onContinue);
+  }
+
+  function showNativeAdThen(callback, opts) {
+    const kind = opts.kind || "interstitial";
+    const cfg = getAdConfig();
+    const AdMob = getNativeAdMob();
+    adBlocking = true;
+    pendingStartAfterAd = false;
+
+    const fallback = (reason) => {
+      console.warn("[SkyHop] Native ad fallback:", reason);
+      showSimulatedAdThen(callback, opts);
+    };
+
+    if (!AdMob || !cfg) {
+      fallback("missing bridge");
+      return;
+    }
+
+    ensureAdMobInitialized(AdMob)
+      .then(async () => {
+        if (kind === "rewarded") {
+          // Policy: grant only after the user earns the reward (not on dismiss).
+          let earned = false;
+          let rewardHandle = null;
+          try {
+            if (typeof AdMob.addListener === "function") {
+              rewardHandle = await AdMob.addListener(
+                "onRewardedVideoAdReward",
+                () => {
+                  earned = true;
+                }
+              );
+            }
+            await AdMob.prepareRewardVideoAd({ adId: cfg.REWARDED_UNIT_ID });
+            const rewardItem = await AdMob.showRewardVideoAd();
+            if (rewardItem) earned = true;
+          } finally {
+            try {
+              if (rewardHandle && typeof rewardHandle.remove === "function") {
+                await rewardHandle.remove();
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          }
+          if (earned) {
+            finishAdFlow(callback, opts, kind);
+          } else {
+            adBlocking = false;
+            console.warn("[SkyHop] Rewarded ad closed without reward — no grant");
+          }
+          return;
+        }
+        await AdMob.prepareInterstitial({ adId: cfg.INTERSTITIAL_UNIT_ID });
+        await AdMob.showInterstitial();
+        finishAdFlow(callback, opts, kind);
+      })
+      .catch((err) => {
+        fallback(err && err.message ? err.message : err);
+      });
+  }
+
+  /**
+   * Show an interstitial or rewarded ad, then run callback.
+   * Real AdMob when USE_REAL_ADS + unit IDs + native bridge; else simulated overlay.
+   * opts: { title, subtitle, label, kind: "interstitial"|"rewarded", resetRunAdCounter }
+   */
+  function showAdThen(callback, opts) {
+    opts = opts || {};
+    const kind = opts.kind || "interstitial";
+    if (canUseRealAds(kind)) {
+      showNativeAdThen(callback, opts);
+      return;
+    }
+    showSimulatedAdThen(callback, opts);
   }
 
   function needsAdGate() {
@@ -4351,6 +4559,7 @@
   }
 
   syncCoinHUD();
+  warmUpAdMob();
   resetGame();
   requestAnimationFrame(loop);
 })();

@@ -33,6 +33,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+          Google Mobile Ads APPLICATION_ID (App ID).
+          Interstitial unit is in ad-config.js; rewarded still PLACEHOLDER until provided.
+          See ANDROID.md. Official: https://developers.google.com/admob/android/quick-start
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1834002965799249~7940720644"/>
     </application>
 
     <!-- Permissions -->

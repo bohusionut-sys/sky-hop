@@ -9,7 +9,7 @@ Android-first Play Store path for the static web game. The playable web assets l
 - **Android Studio** (Ladybug or newer) with Android SDK + platform tools
 - Accept Android SDK licenses in Android Studio SDK Manager
 
-AdMob app/ad unit IDs and Play Billing are **not** wired yet — simulated ads (`showAdThen` in `game.js`) remain. Add AdMob Capacitor plugin later when you have IDs.
+Mobile Ads + Play Billing plugins are installed. App ID `ca-app-pub-1834002965799249~7940720644`, interstitial `ca-app-pub-1834002965799249/1207791334`, rewarded `ca-app-pub-1834002965799249/4057315950` are in `ad-config.js` (App ID also in AndroidManifest). `USE_REAL_ADS: true` — native uses the SDK; web keeps simulated overlay. Rewarded grants only after the reward callback.
 
 ## One-time setup
 
@@ -63,21 +63,32 @@ This copies `index.html`, `game.js`, `style.css` → `www/` and runs `cap sync`.
 | webDir | `www` |
 | Config file | `capacitor.config.json` |
 
-## Coming next
+## Privacy + store listing
 
-- **AdMob** — replace simulated `showAdThen` with real rewarded/interstitial units (IDs not required for this wrap)
-- **Play Billing** — Stardust packs + No Ads (£1.99)
-- App icon / splash via Capacitor assets or Android Studio mipmaps
-- Privacy policy + Data safety form before production
+- Privacy URL: https://bohusionut-sys.github.io/sky-hop/privacy.html (`privacy.html`)
+- Store copy: [STORE_LISTING.md](./STORE_LISTING.md)
 
-## If `cap add android` fails on a machine without SDK
+## Mobile Ads details
 
-Keep `package.json`, `capacitor.config.json`, `www/` via `npm run build:web`, and this doc. On a machine with Android Studio:
+| Item | Value |
+|------|-------|
+| App ID | `ca-app-pub-1834002965799249~7940720644` |
+| Interstitial | `ca-app-pub-1834002965799249/1207791334` |
+| Rewarded | `ca-app-pub-1834002965799249/4057315950` |
 
-```bash
-npm install
-npm run build:web
-npx cap add android
-npx cap sync
-npx cap open android
-```
+Plugin: `@capacitor-community/admob@7`. Guides: https://developers.google.com/admob/android/quick-start · interstitial · rewarded-fullscreen-ads.
+
+**Policy:** do not click your own ads; no accidental-click placements; interstitials at natural breaks; rewarded unlock only after earned reward; https://support.google.com/admob/answer/6128543
+
+## Play Billing stubs
+
+Product IDs: `skyhop_remove_ads`, `skyhop_stardust_5/_15/_40/_80/_150/_300` via `billing.js` + `@capgo/native-purchases@7` (simulated on web).
+
+## Remaining checklist
+
+1. Payments approved → create Play app `com.skyhop.game`
+2. Privacy URL + STORE_LISTING + rating + Data safety + ads declaration
+3. Create IAP products
+4. Signed AAB → internal testing (interstitial, rewarded, billing)
+5. Closed testing / 12 testers if still required → production
+

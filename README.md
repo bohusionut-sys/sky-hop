@@ -88,6 +88,15 @@ Skins, maps, trails, and music share the same names/tiers (one map, one light tr
 - `index.html` — page shell, dual-currency HUD, shop tabs (Skins | Maps | Trails | Stardust), leaderboard, challenges, promo, overlays
 - `style.css` — responsive layout + rarity section styling
 - `game.js` — game loop, physics, skins, maps, light trails, challenges, persistence
+- `ad-config.js` — Mobile Ads App ID + interstitial/rewarded unit IDs + `USE_REAL_ADS`
+- `billing.js` — Play Billing facade (`skyhop_remove_ads`, `skyhop_stardust_*`)
+- `privacy.html` — privacy policy (also on GitHub Pages)
+- `STORE_LISTING.md` / `ANDROID.md` — Play Store prep
+
+## Privacy
+
+- **[privacy.html](./privacy.html)** — UK/EU-friendly policy (ads, Play Billing, local storage, no accounts)
+- Public URL: https://bohusionut-sys.github.io/sky-hop/privacy.html
 
 ## Android (Capacitor / Play Store)
 
@@ -95,9 +104,12 @@ Native Android wrap uses **Capacitor** (`appId` **`com.skyhop.game`**, web asset
 
 ```bash
 npm install
-npm run build:web    # copies index.html, game.js, style.css → www/
+npm run build:web    # copies web assets + ad-config.js, billing.js, privacy.html → www/
 npm run cap:sync     # build:web + cap sync
 npm run cap:open     # open android/ in Android Studio
 ```
 
-See **[ANDROID.md](./ANDROID.md)** for Android Studio, Play Console, signing, and AdMob / Play Billing next steps. Simulated ads in `game.js` (`showAdThen`) stay until AdMob IDs are added — not required for this wrap.
+See **[ANDROID.md](./ANDROID.md)** for Mobile Ads IDs, Play Billing product IDs, signing, and remaining console checklist.
+Store listing draft: **[STORE_LISTING.md](./STORE_LISTING.md)**.
+
+On native, interstitial + rewarded use the Mobile Ads SDK (`USE_REAL_ADS: true` in `ad-config.js`). Web/GitHub Pages keep the simulated overlay. Checkout uses `billing.js` (simulated on web).
