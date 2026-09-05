@@ -2219,17 +2219,24 @@
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
     }
     resumeMusicOnGesture();
     playSfx("ui");
     openSettingsPage();
   }
+  window.__skyHopOpenSettings = handleOpenSettings;
   if (btnSettings) {
+    btnSettings.onclick = handleOpenSettings;
     btnSettings.addEventListener("click", handleOpenSettings);
-    btnSettings.addEventListener("pointerup", (e) => {
-      // Avoid double-open with click on some devices: only use pointerup for touch
-      if (e.pointerType === "touch") handleOpenSettings(e);
-    });
+    btnSettings.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        handleOpenSettings(e);
+      },
+      { passive: false }
+    );
   }
   if (settingsBack) {
     settingsBack.addEventListener("click", () => {
@@ -3785,9 +3792,9 @@
 
     if (state === STATE.OVER) {
       const pw = 240;
-      const ph = adsRemoved ? 210 : 232;
+      const ph = 220;
       const px = (W - pw) / 2;
-      const py = H * 0.28;
+      const py = H * 0.26;
       ctx.fillStyle = C.panel;
       roundRect(px, py, pw, ph, 14);
       ctx.fill();
@@ -3799,33 +3806,28 @@
       ctx.textAlign = "center";
       ctx.font = "bold 28px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = C.accent;
-      ctx.fillText("Game Over", W / 2, py + 36);
+      ctx.fillText("Game Over", W / 2, py + 34);
 
       ctx.font = "16px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillText(`Score  ${score}`, W / 2, py + 68);
-      ctx.fillText(`Best   ${best}`, W / 2, py + 90);
+      ctx.fillText(`Score  ${score}`, W / 2, py + 64);
+      ctx.fillText(`Best   ${best}`, W / 2, py + 86);
 
       ctx.fillStyle = C.coin;
       ctx.fillText(`Coins +${coinsEarnedThisRun}`, W / 2, py + 112);
       ctx.fillStyle = C.stardust || C.gem;
-      ctx.fillText(`Stardust +${stardustEarnedThisRun}`, W / 2, py + 132);
+      ctx.fillText(`Stardust +${stardustEarnedThisRun}`, W / 2, py + 134);
+
       ctx.font = "12px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.fillText(`Bag ${coins} · Stardust ${stardust}`, W / 2, py + 152);
-
-      if (!adsRemoved) {
-        ctx.font = "12px Segoe UI, system-ui, sans-serif";
-        ctx.fillStyle = "rgba(233,196,106,0.9)";
-        ctx.fillText("Remove ads · £1.99 GBP", W / 2, py + 172);
-      }
+      ctx.fillText(`Bag ${coins} · Stardust ${stardust}`, W / 2, py + 158);
 
       if (overTimer > 20) {
         const pulse = 0.7 + Math.sin(frames * 0.12) * 0.3;
         ctx.globalAlpha = pulse;
         ctx.font = "600 15px Segoe UI, system-ui, sans-serif";
         ctx.fillStyle = "#fff";
-        ctx.fillText("Tap to retry", W / 2, py + (adsRemoved ? 176 : 196));
+        ctx.fillText("Tap to retry", W / 2, py + 190);
         ctx.globalAlpha = 1;
       }
     }
