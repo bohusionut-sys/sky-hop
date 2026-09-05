@@ -38,6 +38,7 @@ body {
   gap: 12px;
   flex: 0 1 auto;
   max-width: 100%;
+  margin: 0 auto;
 }
 
 #wrap {
@@ -47,6 +48,12 @@ body {
   justify-content: center;
   touch-action: none;
   user-select: none;
+  --btn-shop-top: 10px;
+  --btn-shop-left: 10px;
+  --btn-rank-top: 10px;
+  --btn-rank-left: 50%;
+  --btn-noads-top: 42%;
+  --btn-noads-right: 10px;
 }
 
 #game {
@@ -61,41 +68,116 @@ body {
   cursor: pointer;
 }
 
-/* --- Persistent coin HUD (top-right over canvas) --- */
-#coin-hud {
+/* --- Persistent currency HUD (top-right over canvas) --- */
+#currency-hud {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 5;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+
+#coin-hud,
+#stardust-hud {
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px 6px 8px;
+  padding: 5px 10px 5px 8px;
   background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(244, 211, 94, 0.55);
   border-radius: 999px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  font-size: 0.95rem;
-  color: #f4d35e;
-  pointer-events: none;
+  font-size: 0.9rem;
 }
 
-.coin-glyph {
+#coin-hud {
+  border: 1px solid rgba(244, 211, 94, 0.55);
+  color: #f4d35e;
+}
+
+#stardust-hud {
+  border: 1px solid rgba(192, 132, 252, 0.55);
+  color: #e9d5ff;
+}
+
+.coin-glyph,
+.stardust-glyph {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff6b0, #f4d35e 45%, #c9a227);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
 }
 
+.coin-glyph {
+  background: radial-gradient(circle at 35% 30%, #fff6b0, #f4d35e 45%, #c9a227);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.stardust-glyph {
+  background: radial-gradient(circle at 35% 30%, #f5d0fe, #c084fc 45%, #7c3aed);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25), 0 0 6px rgba(192, 132, 252, 0.55);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  border-radius: 0;
+}
+
+/* Frame overlay buttons — tweak via CSS vars from screenshot marks */
 #btn-shop {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 5;
+  top: var(--btn-shop-top);
+  left: var(--btn-shop-left);
+  z-index: 6;
+}
+
+/* YELLOW mark: top-center between Shop and coin HUD */
+#btn-rank,
+.frame-btn-rank {
+  position: absolute;
+  top: var(--btn-rank-top);
+  left: var(--btn-rank-left);
+  transform: translateX(-50%);
+  z-index: 6;
+}
+
+/* RED mark: mid-right open sky beside bird */
+#btn-remove-ads,
+.frame-btn-remove {
+  position: absolute;
+  top: var(--btn-noads-top);
+  right: var(--btn-noads-right);
+  left: auto;
+  z-index: 6;
+}
+
+.frame-btn {
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#btn-remove-ads.ads-cleared {
+  color: #40c4b0;
+  border-color: rgba(64, 196, 176, 0.55);
+}
+
+/* Hide frame nav while playing; show on ready/over */
+body.playing #btn-rank,
+body.playing #btn-remove-ads {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.ready #btn-rank,
+body.ready #btn-remove-ads,
+body.over #btn-rank,
+body.over #btn-remove-ads {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .hud-btn {
@@ -392,7 +474,7 @@ body.playing .promo-banner {
 
 /* --- Shop --- */
 .shop-panel {
-  width: min(520px, 100%);
+  width: min(560px, 100%);
   max-height: min(88vh, 720px);
   text-align: left;
   display: flex;
@@ -416,17 +498,32 @@ body.playing .promo-banner {
   min-width: 100px;
 }
 
-.shop-coins {
+.shop-balances {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shop-coins,
+.shop-stardust {
   display: flex;
   align-items: center;
   gap: 6px;
   font-weight: 800;
-  color: #f4d35e;
   font-variant-numeric: tabular-nums;
   background: rgba(0, 0, 0, 0.25);
   border-radius: 999px;
   padding: 4px 10px;
+}
+
+.shop-coins {
+  color: #f4d35e;
   border: 1px solid rgba(244, 211, 94, 0.35);
+}
+
+.shop-stardust {
+  color: #e9d5ff;
+  border: 1px solid rgba(192, 132, 252, 0.4);
 }
 
 .shop-close {
@@ -434,11 +531,151 @@ body.playing .promo-banner {
   font-size: 0.8rem;
 }
 
+.shop-live {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#shop-live-preview {
+  width: 160px;
+  height: 80px;
+  border-radius: 8px;
+  background: #4a9fd8;
+  flex-shrink: 0;
+}
+
+.shop-preview-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.3;
+}
+
+.shop-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.shop-tab {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shop-tab.active {
+  background: rgba(233, 196, 106, 0.22);
+  border-color: rgba(233, 196, 106, 0.55);
+  color: #fff;
+}
+
+.shop-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.shop-filter {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.shop-filter.active {
+  color: #fff;
+  border-color: rgba(233, 196, 106, 0.5);
+  background: rgba(233, 196, 106, 0.18);
+}
+
 .shop-hint {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.55);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   line-height: 1.35;
+}
+
+.shop-hint strong {
+  color: #e9d5ff;
+}
+
+.rarity-badge {
+  align-self: flex-start;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1.4;
+}
+
+.rarity-badge.rarity-common {
+  background: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.rarity-badge.rarity-rare {
+  background: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+}
+
+.rarity-badge.rarity-epic {
+  background: rgba(168, 85, 247, 0.22);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.rarity-badge.rarity-legendary {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.55);
+}
+
+.skin-card.rarity-common {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.skin-card.rarity-rare {
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.skin-card.rarity-epic {
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.skin-card.rarity-legendary {
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.12);
+}
+
+.skin-price.stardust {
+  color: #c084fc;
+}
+
+.skin-btn.buy-stardust {
+  background: linear-gradient(180deg, #e9d5ff, #a78bfa);
+  color: #2e1065;
 }
 
 .shop-grid {
@@ -765,4 +1002,77 @@ body.playing .promo-banner {
   .shop-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+
+/* --- Full page overlays (Rank / Remove Ads) --- */
+.page-overlay {
+  z-index: 1100;
+}
+
+.page-panel {
+  width: min(420px, 100%);
+  max-height: min(90vh, 720px);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.page-header h2 {
+  color: #e9c46a;
+  font-size: 1.2rem;
+  margin: 0;
+  flex: 1;
+}
+
+.btn-back {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eef8;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  filter: brightness(1.1);
+}
+
+.page-card {
+  margin: 0;
+}
+
+.page-card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+
+.rank-body {
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.rank-body .lb-list {
+  min-height: 200px;
+}
+
+/* Legacy side promo / external banners removed from layout */
+#promo,
+.promo-banner {
+  display: none !important;
 }

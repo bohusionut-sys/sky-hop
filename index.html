@@ -11,19 +11,58 @@
   <div id="app">
     <div id="main-col">
       <div id="wrap">
-        <div id="coin-hud" aria-live="polite" title="Coin balance">
-          <span class="coin-glyph" aria-hidden="true"></span>
-          <span id="coin-balance">0</span>
+        <!-- Positions easy to tweak: --btn-remove-ads-*, --btn-rank-* in CSS -->
+        <button type="button" id="btn-shop" class="hud-btn frame-btn" aria-label="Open shop">Shop</button>
+        <button type="button" id="btn-remove-ads" class="hud-btn frame-btn frame-btn-remove" aria-label="Open remove ads">No Ads</button>
+        <button type="button" id="btn-rank" class="hud-btn frame-btn frame-btn-rank" aria-label="Open ranks">★ Rank</button>
+
+        <div id="currency-hud" aria-live="polite">
+          <div id="coin-hud" title="Coin balance">
+            <span class="coin-glyph" aria-hidden="true"></span>
+            <span id="coin-balance">0</span>
+          </div>
+          <div id="stardust-hud" title="Star Dust balance">
+            <span class="stardust-glyph" aria-hidden="true"></span>
+            <span id="stardust-balance">0</span>
+          </div>
         </div>
-        <button type="button" id="btn-shop" class="hud-btn" aria-label="Open skin shop">Shop</button>
+
         <canvas id="game" width="360" height="640" aria-label="Sky Hop game canvas"></canvas>
       </div>
+    </div>
+  </div>
 
-      <section id="leaderboard" aria-label="Local device leaderboards">
-        <header class="lb-header">
-          <h2>Leaderboard</h2>
-          <span class="lb-badge">Local / this device</span>
-        </header>
+  <!-- Full page: Remove Ads -->
+  <div id="remove-ads-page" class="overlay page-overlay hidden" aria-hidden="true" role="dialog" aria-label="Remove ads">
+    <div class="overlay-panel page-panel">
+      <header class="page-header">
+        <button type="button" id="remove-ads-back" class="btn-back" aria-label="Back to main">← Back</button>
+        <h2>Remove Ads</h2>
+      </header>
+      <div id="promo-offer" class="promo-card page-card">
+        <p class="promo-kicker">Support Sky Hop</p>
+        <h3>Play without interruptions</h3>
+        <p class="promo-price">£1.99 <span>GBP</span></p>
+        <p class="promo-desc">Skip the interstitial every 3 runs. One-time simulated purchase on this device — no real payment is processed.</p>
+        <button type="button" id="btn-buy-ads" class="promo-btn">Buy · Remove ads</button>
+      </div>
+      <div id="promo-thanks" class="promo-card promo-thanks page-card hidden">
+        <p class="promo-kicker">Thank you</p>
+        <h3>Ads removed</h3>
+        <p class="promo-desc">You’re all set — no more ad gates on this device.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full page: Rank / Leaderboards -->
+  <div id="rank-page" class="overlay page-overlay hidden" aria-hidden="true" role="dialog" aria-label="Ranks">
+    <div class="overlay-panel page-panel">
+      <header class="page-header">
+        <button type="button" id="rank-back" class="btn-back" aria-label="Back to main">← Back</button>
+        <h2>Rank</h2>
+        <span class="lb-badge">Local / this device</span>
+      </header>
+      <section id="leaderboard" class="rank-body" aria-label="Local device leaderboards">
         <div class="lb-tabs" role="tablist">
           <button type="button" class="lb-tab active" data-period="daily" role="tab" aria-selected="true">Daily</button>
           <button type="button" class="lb-tab" data-period="weekly" role="tab" aria-selected="false">Weekly</button>
@@ -37,52 +76,41 @@
         </div>
       </section>
     </div>
-
-    <aside id="promo" aria-label="Remove ads offer">
-      <div id="promo-offer" class="promo-card">
-        <p class="promo-kicker">Support Sky Hop</p>
-        <h2>Remove ads</h2>
-        <p class="promo-price">£1.99 <span>GBP</span></p>
-        <p class="promo-desc">Skip the interstitial every 3 runs. One-time simulated purchase on this device.</p>
-        <button type="button" id="btn-buy-ads" class="promo-btn">Buy · Remove ads</button>
-      </div>
-      <div id="promo-thanks" class="promo-card promo-thanks hidden">
-        <p class="promo-kicker">Thank you</p>
-        <h2>Ads removed</h2>
-        <p class="promo-desc">You’re all set — no more ad gates on this device.</p>
-      </div>
-    </aside>
   </div>
 
-  <!-- Compact remove-ads banner (ready / game-over) -->
-  <div id="promo-banner" class="promo-banner hidden" aria-live="polite">
-    <div id="promo-banner-offer" class="promo-banner-inner">
-      <div class="promo-banner-text">
-        <strong>Remove ads</strong>
-        <span>£1.99 GBP · skip every-3-runs gate</span>
-      </div>
-      <button type="button" id="btn-buy-ads-banner" class="promo-btn promo-btn-sm">Buy</button>
-    </div>
-    <div id="promo-banner-thanks" class="promo-banner-inner promo-banner-thanks hidden">
-      <div class="promo-banner-text">
-        <strong>Ads removed</strong>
-        <span>Thanks for supporting Sky Hop</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Skin shop -->
-  <div id="shop-modal" class="overlay hidden" aria-hidden="true" role="dialog" aria-label="Skin shop">
+  <!-- Skin & map shop -->
+  <div id="shop-modal" class="overlay hidden" aria-hidden="true" role="dialog" aria-label="Sky Hop shop">
     <div class="overlay-panel shop-panel">
       <header class="shop-header">
-        <h2>Skin Shop</h2>
-        <div class="shop-coins">
-          <span class="coin-glyph" aria-hidden="true"></span>
-          <span id="shop-coin-balance">0</span>
+        <h2>Shop</h2>
+        <div class="shop-balances">
+          <div class="shop-coins">
+            <span class="coin-glyph" aria-hidden="true"></span>
+            <span id="shop-coin-balance">0</span>
+          </div>
+          <div class="shop-stardust">
+            <span class="stardust-glyph" aria-hidden="true"></span>
+            <span id="shop-stardust-balance">0</span>
+          </div>
         </div>
         <button type="button" id="shop-close" class="btn-ghost shop-close" aria-label="Close shop">Close</button>
       </header>
-      <p class="shop-hint">Spend coins to unlock skins. Equip one at a time — saved on this device.</p>
+      <div class="shop-live">
+        <canvas id="shop-live-preview" width="200" height="100" aria-hidden="true"></canvas>
+        <p id="shop-preview-label" class="shop-preview-label">Preview</p>
+      </div>
+      <div class="shop-tabs" role="tablist">
+        <button type="button" class="shop-tab active" data-tab="skins" role="tab" aria-selected="true">Skins</button>
+        <button type="button" class="shop-tab" data-tab="maps" role="tab" aria-selected="false">Maps</button>
+      </div>
+      <div class="shop-filters" role="toolbar" aria-label="Filter by rarity">
+        <button type="button" class="shop-filter active" data-rarity="all">All</button>
+        <button type="button" class="shop-filter" data-rarity="common">Common</button>
+        <button type="button" class="shop-filter" data-rarity="rare">Rare</button>
+        <button type="button" class="shop-filter" data-rarity="epic">Epic</button>
+        <button type="button" class="shop-filter" data-rarity="legendary">Legendary</button>
+      </div>
+      <p class="shop-hint">Coins unlock Common–Epic. <strong>Star Dust</strong> unlocks Legendaries (earn 1 per 8 pipes). Fairy trails scale with rarity.</p>
       <div id="shop-grid" class="shop-grid"></div>
     </div>
   </div>
@@ -100,7 +128,7 @@
     </div>
   </div>
 
-  <!-- Simulated checkout -->
+  <!-- Simulated checkout (opened from Remove Ads page) -->
   <div id="checkout-modal" class="overlay hidden" aria-hidden="true">
     <div class="overlay-panel checkout-panel">
       <h2>Checkout</h2>
