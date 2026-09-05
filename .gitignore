@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+
+# Built web bundle for Capacitor (regenerate with build:web)
+www/
+
+# Capacitor / Android
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/release/
+android/.cxx/
+*.keystore
+*.jks
+
+# Capacitor generated
+.capacitor/

@@ -1,0 +1,20 @@
+{
+  "name": "sky-hop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sky Hop \u2014 endless flyer Android wrap via Capacitor",
+  "scripts": {
+    "build:web": "mkdir -p www && cp index.html game.js style.css www/",
+    "cap:sync": "npm run build:web && npx cap sync",
+    "cap:open": "npx cap open android",
+    "cap:add:android": "npm run build:web && npx cap add android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}

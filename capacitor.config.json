@@ -1,0 +1,11 @@
+{
+  "appId": "com.skyhop.game",
+  "appName": "Sky Hop",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

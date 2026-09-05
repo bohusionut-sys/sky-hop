@@ -88,3 +88,16 @@ Skins, maps, trails, and music share the same names/tiers (one map, one light tr
 - `index.html` — page shell, dual-currency HUD, shop tabs (Skins | Maps | Trails | Stardust), leaderboard, challenges, promo, overlays
 - `style.css` — responsive layout + rarity section styling
 - `game.js` — game loop, physics, skins, maps, light trails, challenges, persistence
+
+## Android (Capacitor / Play Store)
+
+Native Android wrap uses **Capacitor** (`appId` **`com.skyhop.game`**, web assets from `www/`).
+
+```bash
+npm install
+npm run build:web    # copies index.html, game.js, style.css → www/
+npm run cap:sync     # build:web + cap sync
+npm run cap:open     # open android/ in Android Studio
+```
+
+See **[ANDROID.md](./ANDROID.md)** for Android Studio, Play Console, signing, and AdMob / Play Billing next steps. Simulated ads in `game.js` (`showAdThen`) stay until AdMob IDs are added — not required for this wrap.
