@@ -671,26 +671,27 @@
   // --- Music (~20) — one track per skin, same ids/names/pricing ---
   // Procedural Web Audio loops; vibe drives timbre / rhythm (no external files).
   const MUSIC_VIBES = {
-    coral: { style: "tropical", bpm: 96, root: 196, wave: "sine", brightness: 0.55 },
-    neon: { style: "synth", bpm: 128, root: 110, wave: "sawtooth", brightness: 0.7 },
-    bone: { style: "hollow", bpm: 72, root: 98, wave: "triangle", brightness: 0.4 },
-    infernal: { style: "tense", bpm: 100, root: 82, wave: "sawtooth", brightness: 0.5 },
-    void: { style: "glitch", bpm: 90, root: 55, wave: "square", brightness: 0.45 },
-    mohawk: { style: "riot", bpm: 140, root: 123, wave: "square", brightness: 0.65 },
-    vampire: { style: "noir", bpm: 78, root: 87, wave: "triangle", brightness: 0.42 },
-    chrome: { style: "robot", bpm: 118, root: 165, wave: "square", brightness: 0.6 },
-    hotsauce: { style: "spicy", bpm: 124, root: 147, wave: "sawtooth", brightness: 0.68 },
-    assassin: { style: "stealth", bpm: 88, root: 110, wave: "sine", brightness: 0.38 },
-    slime: { style: "wobble", bpm: 108, root: 98, wave: "sawtooth", brightness: 0.58 },
-    golden: { style: "majestic", bpm: 100, root: 175, wave: "triangle", brightness: 0.72 },
-    ice: { style: "crystal", bpm: 92, root: 262, wave: "sine", brightness: 0.62 },
-    pixel: { style: "chip", bpm: 130, root: 196, wave: "square", brightness: 0.66 },
-    cosmic: { style: "ambient", bpm: 70, root: 131, wave: "sine", brightness: 0.5 },
-    lava: { style: "rumble", bpm: 95, root: 73, wave: "sawtooth", brightness: 0.52 },
-    ghost: { style: "ethereal", bpm: 66, root: 147, wave: "sine", brightness: 0.36 },
-    eel: { style: "electric", bpm: 120, root: 185, wave: "square", brightness: 0.64 },
-    candy: { style: "playful", bpm: 132, root: 220, wave: "triangle", brightness: 0.7 },
-    obsidian: { style: "regal", bpm: 84, root: 65, wave: "sawtooth", brightness: 0.48 },
+    // All tracks are arcade/chiptune-flavored; style still tints motif + drums
+    coral: { style: "arcade", bpm: 150, root: 196, wave: "square", brightness: 0.75 },
+    neon: { style: "arcade", bpm: 160, root: 147, wave: "square", brightness: 0.8 },
+    bone: { style: "arcadeDark", bpm: 140, root: 110, wave: "square", brightness: 0.65 },
+    infernal: { style: "arcadeDark", bpm: 155, root: 98, wave: "square", brightness: 0.7 },
+    void: { style: "arcadeDark", bpm: 145, root: 82, wave: "square", brightness: 0.68 },
+    mohawk: { style: "arcadePunk", bpm: 170, root: 123, wave: "square", brightness: 0.82 },
+    vampire: { style: "arcadeDark", bpm: 138, root: 87, wave: "square", brightness: 0.62 },
+    chrome: { style: "arcade", bpm: 158, root: 165, wave: "square", brightness: 0.78 },
+    hotsauce: { style: "arcadePunk", bpm: 165, root: 131, wave: "square", brightness: 0.8 },
+    assassin: { style: "arcadeDark", bpm: 148, root: 110, wave: "square", brightness: 0.66 },
+    slime: { style: "arcade", bpm: 152, root: 123, wave: "square", brightness: 0.74 },
+    golden: { style: "arcadeBoss", bpm: 142, root: 175, wave: "square", brightness: 0.85 },
+    ice: { style: "arcade", bpm: 156, root: 196, wave: "square", brightness: 0.76 },
+    pixel: { style: "arcade", bpm: 168, root: 220, wave: "square", brightness: 0.84 },
+    cosmic: { style: "arcadeBoss", bpm: 136, root: 147, wave: "square", brightness: 0.72 },
+    lava: { style: "arcadePunk", bpm: 160, root: 98, wave: "square", brightness: 0.78 },
+    ghost: { style: "arcadeDark", bpm: 132, root: 131, wave: "square", brightness: 0.6 },
+    eel: { style: "arcade", bpm: 162, root: 185, wave: "square", brightness: 0.8 },
+    candy: { style: "arcade", bpm: 172, root: 233, wave: "square", brightness: 0.86 },
+    obsidian: { style: "arcadeBoss", bpm: 134, root: 87, wave: "square", brightness: 0.7 },
   };
 
   const MUSIC = SKINS.map((s) => {
@@ -1030,12 +1031,18 @@
   };
 
   function styleScale(style) {
-    if (style === "tropical" || style === "majestic" || style === "playful" || style === "crystal") {
+    if (style === "arcade" || style === "arcadeBoss" || style === "chip" || style === "playful" || style === "robot") {
+      return MUSIC_SCALES.chip;
+    }
+    if (style === "arcadePunk" || style === "synth" || style === "spicy" || style === "riot") {
+      return MUSIC_SCALES.pent;
+    }
+    if (style === "arcadeDark" || style === "noir" || style === "glitch") {
+      return MUSIC_SCALES.dark;
+    }
+    if (style === "tropical" || style === "majestic" || style === "crystal") {
       return MUSIC_SCALES.major;
     }
-    if (style === "chip" || style === "robot" || style === "electric") return MUSIC_SCALES.chip;
-    if (style === "synth" || style === "spicy" || style === "riot") return MUSIC_SCALES.pent;
-    if (style === "ambient" || style === "ethereal" || style === "cosmic") return MUSIC_SCALES.pent;
     return MUSIC_SCALES.minor;
   }
 
@@ -1140,6 +1147,11 @@
 
     // Catchy deterministic motifs (scale degrees), keyed by style family
     const motifs = {
+      // Classic arcade: fast, square, memorable 16-step hooks
+      arcade: [0, 2, 4, 7, 4, 2, 0, 4, 5, 7, 9, 7, 5, 4, 2, 0],
+      arcadePunk: [0, 0, 3, 5, 0, 3, 7, 5, 0, 5, 7, 10, 7, 5, 3, 0],
+      arcadeDark: [0, 1, 3, 5, 3, 1, 0, 5, 7, 5, 3, 1, 0, 3, 5, 7],
+      arcadeBoss: [0, 4, 7, 12, 7, 4, 0, 7, 5, 9, 12, 9, 7, 5, 4, 0],
       tropical: [0, 2, 4, 2, 5, 4, 2, 0, 0, 2, 4, 5, 4, 2, 0, -1],
       synth: [0, 0, 3, 4, 7, 4, 3, 0, 5, 4, 3, 2, 0, 2, 4, 7],
       hollow: [0, -1, 3, -1, 5, -1, 3, -1, 0, -1, 2, -1, 5, -1, 7, -1],
@@ -1161,8 +1173,11 @@
       playful: [0, 2, 4, 5, 4, 2, 0, 4, 5, 7, 5, 4, 2, 0, 2, 4],
       regal: [0, -1, 4, -1, 7, -1, 4, -1, 0, 2, 4, 7, 5, 4, 2, 0],
     };
-    const motif = motifs[style] || motifs.tropical;
     const bassMotif = {
+      arcade: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 7, -1, 5, -1, 0, -1],
+      arcadePunk: [0, 0, -1, 0, 3, 3, -1, 3, 5, 5, -1, 5, 0, 0, -1, 0],
+      arcadeDark: [0, -1, -1, 0, 5, -1, -1, 5, 0, -1, 3, -1, 5, -1, 0, -1],
+      arcadeBoss: [0, -1, 0, -1, 7, -1, 0, -1, 5, -1, 0, -1, 7, -1, 5, -1],
       tropical: [0, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1, 7, -1, 5, -1],
       synth: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 3, -1, 5, -1, 0, -1],
       default: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
@@ -1192,8 +1207,22 @@
       else if (i % 8 === 4) chord[i] = scale[Math.min(3, scale.length - 1)];
 
       // Kick / snare groove — musical, not hat spam
-      const busy = style === "riot" || style === "synth" || style === "spicy" || style === "chip" || style === "playful" || style === "electric";
-      const sparse = style === "ambient" || style === "ethereal" || style === "stealth" || style === "noir" || style === "hollow";
+      const busy =
+        style === "arcade" ||
+        style === "arcadePunk" ||
+        style === "arcadeBoss" ||
+        style === "riot" ||
+        style === "synth" ||
+        style === "spicy" ||
+        style === "chip" ||
+        style === "playful" ||
+        style === "electric";
+      const sparse =
+        style === "ambient" ||
+        style === "ethereal" ||
+        style === "stealth" ||
+        style === "noir" ||
+        style === "hollow";
       if (sparse) {
         if (i % 8 === 0) kick[i] = 1;
         if (i % 16 === 8) snare[i] = 0.7;
@@ -1347,38 +1376,40 @@
         const base = musicNoteFreq(root, pattern.chord[i]);
         const third = musicNoteFreq(root, pattern.chord[i] + (styleScale(style)[2] || 3));
         const fifth = musicNoteFreq(root, pattern.chord[i] + 7);
-        const padDur = stepDur * 7.5;
-        playMusicTone(base, t, padDur, "sine", 0.035 * bright, 700);
-        playMusicTone(third, t, padDur, "sine", 0.028 * bright, 900);
-        playMusicTone(fifth, t, padDur, "triangle", 0.022 * bright, 1100);
+        const isArcade = String(style).startsWith("arcade");
+        const padDur = stepDur * (isArcade ? 3.2 : 7.5);
+        const padWave = isArcade ? "square" : "sine";
+        const padGain = isArcade ? 0.025 : 0.035;
+        playMusicTone(base, t, padDur, padWave, padGain * bright, isArcade ? 1400 : 700);
+        playMusicTone(third, t, padDur, padWave, padGain * 0.75 * bright, isArcade ? 1600 : 900);
+        playMusicTone(fifth, t, padDur, isArcade ? "square" : "triangle", padGain * 0.6 * bright, isArcade ? 1800 : 1100);
       }
 
       if (pattern.lead[i] >= 0) {
         const f = musicNoteFreq(root, pattern.lead[i]);
-        let leadWave = wave;
-        let leadGain = 0.09 * bright;
-        let filt = 1400 + bright * 1800;
-        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.4 : 1.15);
+        const isArcade = style.startsWith("arcade") || style === "chip" || style === "robot" || style === "playful";
+        let leadWave = isArcade ? "square" : wave;
+        let leadGain = (isArcade ? 0.11 : 0.09) * bright;
+        let filt = isArcade ? 3200 : 1400 + bright * 1800;
+        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.4 : isArcade ? 0.95 : 1.15);
         if (style === "synth" || style === "spicy" || style === "electric") {
           leadWave = "sawtooth";
           leadGain = 0.08 * bright;
           filt = 2400;
         }
-        if (style === "chip" || style === "robot" || style === "playful") {
-          leadWave = "square";
-          leadGain = 0.07 * bright;
-          filt = 2800;
+        if (isArcade) {
+          // Octave sparkle + short duty-cycle feel
+          playMusicTone(f * 2, t, dur * 0.55, "square", leadGain * 0.35, 4500);
+          if (i % 2 === 0) {
+            playMusicTone(f * 1.5, t, stepDur * 0.35, "square", leadGain * 0.22, 3800);
+          }
         }
-        if (style === "crystal" || style === "cosmic" || style === "golden" || style === "majestic") {
-          leadWave = "sine";
-          playMusicTone(f * 2, t, dur * 0.85, "sine", leadGain * 0.4, 4200);
+        if (style === "arcadeBoss" && i % 4 === 0) {
+          playMusicTone(f / 2, t, stepDur * 1.8, "square", leadGain * 0.45, 1800);
         }
         if (style === "glitch") {
           leadWave = "square";
           if (i % 4 === 3) playMusicTone(f * 1.5, t, stepDur * 0.35, "square", 0.05, 2000);
-        }
-        if (style === "candy" || style === "playful") {
-          playMusicTone(f * 1.5, t, dur * 0.5, "triangle", leadGain * 0.35, 3200);
         }
         playMusicTone(f, t, dur, leadWave, leadGain, filt);
       }
