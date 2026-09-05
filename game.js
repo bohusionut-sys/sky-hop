@@ -1599,7 +1599,7 @@
 
   function showAdThen(callback) {
     adBlocking = true;
-    pendingStartAfterAd = true;
+    pendingStartAfterAd = false;
     adOverlay.classList.remove("hidden");
     adOverlay.setAttribute("aria-hidden", "false");
     adContinue.disabled = true;
@@ -1624,7 +1624,6 @@
       adBlocking = false;
       runsSinceAd = 0;
       persistRuns();
-      pendingStartAfterAd = false;
       if (typeof callback === "function") callback();
     };
     adContinue.addEventListener("click", onContinue);
@@ -1687,17 +1686,6 @@
 
   function tryStartPlay() {
     if (adBlocking) return;
-    if (needsAdGate()) {
-      showAdThen(() => {
-        if (state === STATE.READY) {
-          state = STATE.PLAYING;
-          bird.vy = FLAP;
-          bird.wing = 8;
-          syncPromoVisibility();
-        }
-      });
-      return;
-    }
     state = STATE.PLAYING;
     syncPromoVisibility();
   }
@@ -1710,13 +1698,7 @@
     if (!checkoutModal.classList.contains("hidden")) return;
     if (state === STATE.OVER) {
       if (overTimer > 20) {
-        if (needsAdGate()) {
-          showAdThen(() => {
-            resetGame();
-          });
-        } else {
-          resetGame();
-        }
+        resetGame();
       }
       return;
     }
@@ -1873,6 +1855,12 @@
     if (!adsRemoved) {
       runsSinceAd += 1;
       persistRuns();
+      // Show interstitial after the run ends (not on next start)
+      if (needsAdGate()) {
+        showAdThen(() => {
+          syncPromoVisibility();
+        });
+      }
     }
 
     updateLeaderboardsOnScore(score);
