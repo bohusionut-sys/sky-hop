@@ -18,6 +18,11 @@
         <button type="button" id="btn-rank" class="hud-btn frame-btn frame-btn-rank" aria-label="Open ranks">★ Rank</button>
         <button type="button" id="btn-challenges" class="hud-btn frame-btn frame-btn-challenges" aria-label="Open challenges">Challenges</button>
 
+        <div id="music-hud" title="Music">
+          <button type="button" id="btn-music-mute" class="music-mute-btn" aria-label="Mute music" aria-pressed="false">🔊</button>
+          <input type="range" id="music-volume" class="music-volume" min="0" max="100" value="45" aria-label="Music volume" />
+        </div>
+
         <div id="currency-hud" aria-live="polite">
           <div id="coin-hud" title="Coin balance">
             <span class="coin-glyph" aria-hidden="true"></span>
@@ -99,7 +104,7 @@
     </div>
   </div>
 
-  <!-- Skin, map & trail shop -->
+  <!-- Skin, map, trail & music shop -->
   <div id="shop-modal" class="overlay hidden" aria-hidden="true" role="dialog" aria-label="Sky Hop shop">
     <div class="overlay-panel shop-panel">
       <header class="shop-header">
@@ -124,6 +129,7 @@
         <button type="button" class="shop-tab active" data-tab="skins" role="tab" aria-selected="true">Character Skins</button>
         <button type="button" class="shop-tab" data-tab="maps" role="tab" aria-selected="false">Maps</button>
         <button type="button" class="shop-tab" data-tab="trails" role="tab" aria-selected="false">Light Trails</button>
+        <button type="button" class="shop-tab" data-tab="music" role="tab" aria-selected="false">Music</button>
         <button type="button" class="shop-tab" data-tab="stardust" role="tab" aria-selected="false">Stardust</button>
       </div>
       <div id="shop-filters" class="shop-filters hidden" role="toolbar" aria-label="Filter by rarity" hidden></div>

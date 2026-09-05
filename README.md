@@ -20,7 +20,8 @@ No build step, no dependencies, no CDN assets.
 
 - **Click / tap** — flap (or restart after game over)
 - **Space** or **↑** — flap
-- **Shop** (top-left) — unlock/equip **skins**, **maps**, and **light trails**; live preview; **Stardust** tab for currency packs
+- **Shop** (top-left) — unlock/equip **skins**, **maps**, **light trails**, and **music**; live preview; **Stardust** tab for currency packs
+- **Music HUD** (under Shop) — mute toggle + volume slider (saved in `localStorage`)
 - **Rank** (top-center) — full-page daily/weekly/monthly leaderboards
 - **Challenges** (under Rank) — daily + lifetime goals with coin/Stardust rewards
 - **No Ads** (mid-right) — full-page £1.99 remove-ads offer
@@ -36,8 +37,8 @@ No build step, no dependencies, no CDN assets.
 
 | Currency | How to earn | Spent on |
 |----------|-------------|----------|
-| **Coins** | Distance traveled (`1` per 40px) | Common / Rare / Epic skins, maps & trails |
-| **Stardust** | `1` per **25 pipes** cleared, or Shop → Stardust packs | Legendary skins, maps & trails only |
+| **Coins** | Distance traveled (`1` per 40px) | Common / Rare / Epic skins, maps, trails & music |
+| **Stardust** | `1` per **25 pipes** cleared, or Shop → Stardust packs | Legendary skins, maps, trails & music only |
 
 Balances show in the **top-right** HUD (coins + stardust). Canonical key is `skyHopStarDust`; legacy `skyHopGems` migrates once (max) then is removed.
 
@@ -53,9 +54,9 @@ Buy from **Shop → Stardust** tab:
 | 15 Stardust | £1.99 |
 | 40 Stardust | £4.99 |
 
-### Skin, map & trail rarities
+### Skin, map, trail & music rarities
 
-Skins, maps, and trails share the same names/tiers (one map and one light trail themed to each costume). Shop grids group items under **Legendary / Epic / Rare / Common** section headers.
+Skins, maps, trails, and music share the same names/tiers (one map, one light trail, and one procedural track themed to each costume). Shop grids group items under **Legendary / Epic / Rare / Common** section headers.
 
 | Rarity | Examples | Price |
 |--------|----------|-------|
@@ -66,13 +67,17 @@ Skins, maps, and trails share the same names/tiers (one map and one light trail 
 
 **Light trails** are a smooth glowing ribbon behind the bird (motion-blur streak). Quality scales with rarity (common = soft streak → legendary = richer multi-layer glow). Trails equip independently of skins (`skyHopOwnedTrails` / `skyHopEquippedTrail`); default Coral trail is free and equipped. Equipped maps recolor sky, hills, pipes, and ground procedurally.
 
+**Music** uses short Web Audio API procedural loops (no audio files) — one vibe per skin (neon synth, void glitch, candy playful, etc.). Buy/equip independently (`skyHopOwnedMusic` / `skyHopEquippedMusic`); default Coral is free and equipped. Equipped track plays as BGM on ready/play/over; shop Music tab previews the selected card. Mute + volume persist via `skyHopMusicMuted` / `skyHopMusicVolume`.
+
 ## Features
 
-- **Skin shop** — ~20 procedural skins with rarity sections, filters, Buy/Equip
+- **Skin shop** — ~20 procedural skins with rarity sections, Buy/Equip
 - **Map shop** — ~20 themed stages, same rarity/pricing as paired skins
 - **Trail shop** — ~20 light trails (one per design), same rarity/pricing; live preview
+- **Music shop** — ~20 procedural Web Audio tracks (one per skin); preview, Buy/Equip, BGM
 - **Stardust shop tab** — simulated currency packs for legendary unlocks
 - **Light trails** — rarity-scaled glowing ribbons in gameplay + shop preview
+- **Music HUD** — mute + volume on main frame (does not block play)
 - **Local leaderboards** — Daily / Weekly / Monthly on this device
 - **Challenges** — Daily (UTC) + Lifetime goals; claim coins / small Stardust; paced so free play ≈ 1 cheap legendary / ~4 days
 - **Ads (simulated)** — interstitial every 3 runs (skipped if ads removed)

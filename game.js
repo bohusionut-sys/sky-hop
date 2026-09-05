@@ -33,6 +33,10 @@
   const EQUIPPED_MAP_KEY = "skyHopEquippedMap";
   const OWNED_TRAILS_KEY = "skyHopOwnedTrails";
   const EQUIPPED_TRAIL_KEY = "skyHopEquippedTrail";
+  const OWNED_MUSIC_KEY = "skyHopOwnedMusic";
+  const EQUIPPED_MUSIC_KEY = "skyHopEquippedMusic";
+  const MUSIC_MUTE_KEY = "skyHopMusicMuted";
+  const MUSIC_VOLUME_KEY = "skyHopMusicVolume";
   const CHALLENGES_KEY = "skyHopChallenges";
 
   // Coins: 1 coin per this many pixels of horizontal travel
@@ -658,6 +662,47 @@
   const TRAIL_BY_ID = Object.fromEntries(TRAILS.map((t) => [t.id, t]));
   const DEFAULT_TRAIL_ID = "coral";
 
+  // --- Music (~20) — one track per skin, same ids/names/pricing ---
+  // Procedural Web Audio loops; vibe drives timbre / rhythm (no external files).
+  const MUSIC_VIBES = {
+    coral: { style: "tropical", bpm: 96, root: 196, wave: "sine", brightness: 0.55 },
+    neon: { style: "synth", bpm: 128, root: 110, wave: "sawtooth", brightness: 0.7 },
+    bone: { style: "hollow", bpm: 72, root: 98, wave: "triangle", brightness: 0.4 },
+    infernal: { style: "tense", bpm: 100, root: 82, wave: "sawtooth", brightness: 0.5 },
+    void: { style: "glitch", bpm: 90, root: 55, wave: "square", brightness: 0.45 },
+    mohawk: { style: "riot", bpm: 140, root: 123, wave: "square", brightness: 0.65 },
+    vampire: { style: "noir", bpm: 78, root: 87, wave: "triangle", brightness: 0.42 },
+    chrome: { style: "robot", bpm: 118, root: 165, wave: "square", brightness: 0.6 },
+    hotsauce: { style: "spicy", bpm: 124, root: 147, wave: "sawtooth", brightness: 0.68 },
+    assassin: { style: "stealth", bpm: 88, root: 110, wave: "sine", brightness: 0.38 },
+    slime: { style: "wobble", bpm: 108, root: 98, wave: "sawtooth", brightness: 0.58 },
+    golden: { style: "majestic", bpm: 100, root: 175, wave: "triangle", brightness: 0.72 },
+    ice: { style: "crystal", bpm: 92, root: 262, wave: "sine", brightness: 0.62 },
+    pixel: { style: "chip", bpm: 130, root: 196, wave: "square", brightness: 0.66 },
+    cosmic: { style: "ambient", bpm: 70, root: 131, wave: "sine", brightness: 0.5 },
+    lava: { style: "rumble", bpm: 95, root: 73, wave: "sawtooth", brightness: 0.52 },
+    ghost: { style: "ethereal", bpm: 66, root: 147, wave: "sine", brightness: 0.36 },
+    eel: { style: "electric", bpm: 120, root: 185, wave: "square", brightness: 0.64 },
+    candy: { style: "playful", bpm: 132, root: 220, wave: "triangle", brightness: 0.7 },
+    obsidian: { style: "regal", bpm: 84, root: 65, wave: "sawtooth", brightness: 0.48 },
+  };
+
+  const MUSIC = SKINS.map((s) => {
+    const vibe = MUSIC_VIBES[s.id] || MUSIC_VIBES.coral;
+    return {
+      id: s.id,
+      name: s.name,
+      price: s.price,
+      rarity: s.rarity,
+      currency: s.currency,
+      color: s.trailColor,
+      accent: s.trailAccent,
+      vibe,
+    };
+  });
+  const MUSIC_BY_ID = Object.fromEntries(MUSIC.map((m) => [m.id, m]));
+  const DEFAULT_MUSIC_ID = "coral";
+
   // --- State ---
   const STATE = { READY: 0, PLAYING: 1, OVER: 2 };
   let state = STATE.READY;
@@ -760,11 +805,53 @@
     equippedTrailId = DEFAULT_TRAIL_ID;
   }
 
-  let shopTab = "skins"; // skins | maps | trails | stardust
+  function loadOwnedMusic() {
+    let owned = [DEFAULT_MUSIC_ID];
+    try {
+      const raw = JSON.parse(localStorage.getItem(OWNED_MUSIC_KEY) || "null");
+      if (Array.isArray(raw) && raw.length) {
+        owned = raw.filter((id) => MUSIC_BY_ID[id]);
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    if (!owned.includes(DEFAULT_MUSIC_ID)) owned.unshift(DEFAULT_MUSIC_ID);
+    return Array.from(new Set(owned));
+  }
+
+  let ownedMusic = loadOwnedMusic();
+  let equippedMusicId = localStorage.getItem(EQUIPPED_MUSIC_KEY) || DEFAULT_MUSIC_ID;
+  if (!MUSIC_BY_ID[equippedMusicId] || !ownedMusic.includes(equippedMusicId)) {
+    equippedMusicId = DEFAULT_MUSIC_ID;
+  }
+
+  function loadMusicMuted() {
+    try {
+      return localStorage.getItem(MUSIC_MUTE_KEY) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function loadMusicVolume() {
+    try {
+      const v = parseFloat(localStorage.getItem(MUSIC_VOLUME_KEY) || "0.45");
+      if (Number.isFinite(v)) return Math.max(0, Math.min(1, v));
+    } catch (_) {
+      /* ignore */
+    }
+    return 0.45;
+  }
+
+  let musicMuted = loadMusicMuted();
+  let musicVolume = loadMusicVolume();
+
+  let shopTab = "skins"; // skins | maps | trails | music | stardust
   let shopRarityFilter = "all";
   let shopPreviewSkinId = equippedSkinId;
   let shopPreviewMapId = equippedMapId;
   let shopPreviewTrailId = equippedTrailId;
+  let shopPreviewMusicId = equippedMusicId;
   let trailPoints = [];
   let shopTrailPoints = [];
   let shopPreviewAnimId = 0;
@@ -803,6 +890,26 @@
 
   function getEquippedTrail() {
     return TRAIL_BY_ID[equippedTrailId] || TRAIL_BY_ID[DEFAULT_TRAIL_ID];
+  }
+
+  function persistOwnedMusic() {
+    localStorage.setItem(OWNED_MUSIC_KEY, JSON.stringify(ownedMusic));
+  }
+
+  function persistEquippedMusic() {
+    localStorage.setItem(EQUIPPED_MUSIC_KEY, equippedMusicId);
+  }
+
+  function getEquippedMusic() {
+    return MUSIC_BY_ID[equippedMusicId] || MUSIC_BY_ID[DEFAULT_MUSIC_ID];
+  }
+
+  function persistMusicMute() {
+    localStorage.setItem(MUSIC_MUTE_KEY, musicMuted ? "1" : "0");
+  }
+
+  function persistMusicVolume() {
+    localStorage.setItem(MUSIC_VOLUME_KEY, String(musicVolume));
   }
 
   function applyMapPalette(map) {
@@ -867,6 +974,306 @@
   };
 
   applyMapPalette(getEquippedMap());
+
+  // --- Procedural music (Web Audio API, no external files) ---
+  const musicEngine = {
+    ctx: null,
+    master: null,
+    muteGain: null,
+    playingId: null,
+    previewing: false,
+    timerId: 0,
+    nextTime: 0,
+    step: 0,
+    pattern: null,
+    track: null,
+  };
+
+  const MUSIC_SCALES = {
+    major: [0, 2, 4, 5, 7, 9, 11],
+    minor: [0, 2, 3, 5, 7, 8, 10],
+    pent: [0, 2, 4, 7, 9],
+    dark: [0, 1, 3, 5, 7, 8, 10],
+    chip: [0, 3, 5, 7, 10],
+  };
+
+  function styleScale(style) {
+    if (style === "tropical" || style === "majestic" || style === "playful" || style === "crystal") {
+      return MUSIC_SCALES.major;
+    }
+    if (style === "chip" || style === "robot" || style === "electric") return MUSIC_SCALES.chip;
+    if (style === "synth" || style === "spicy" || style === "riot") return MUSIC_SCALES.pent;
+    if (style === "ambient" || style === "ethereal" || style === "cosmic") return MUSIC_SCALES.pent;
+    return MUSIC_SCALES.minor;
+  }
+
+  function ensureMusicContext() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!musicEngine.ctx) {
+      musicEngine.ctx = new AC();
+      musicEngine.master = musicEngine.ctx.createGain();
+      musicEngine.muteGain = musicEngine.ctx.createGain();
+      musicEngine.master.connect(musicEngine.muteGain);
+      musicEngine.muteGain.connect(musicEngine.ctx.destination);
+      musicEngine.master.gain.value = musicVolume * 0.22;
+      musicEngine.muteGain.gain.value = musicMuted ? 0 : 1;
+    }
+    if (musicEngine.ctx.state === "suspended") {
+      musicEngine.ctx.resume().catch(() => {});
+    }
+    return musicEngine.ctx;
+  }
+
+  function resumeMusicOnGesture() {
+    ensureMusicContext();
+  }
+
+  function applyMusicGains() {
+    if (!musicEngine.master || !musicEngine.muteGain) return;
+    musicEngine.master.gain.value = Math.max(0, Math.min(1, musicVolume)) * 0.22;
+    musicEngine.muteGain.gain.value = musicMuted ? 0 : 1;
+  }
+
+  function buildMusicPattern(track) {
+    const vibe = track.vibe || MUSIC_VIBES.coral;
+    const scale = styleScale(vibe.style);
+    const style = vibe.style;
+    const steps = 16;
+    const bass = new Array(steps).fill(-1);
+    const lead = new Array(steps).fill(-1);
+    const hat = new Array(steps).fill(0);
+
+    const dens = style === "ambient" || style === "ethereal" || style === "hollow" || style === "stealth"
+      ? 0.35
+      : style === "riot" || style === "synth" || style === "chip" || style === "playful"
+        ? 0.85
+        : 0.55;
+
+    for (let i = 0; i < steps; i++) {
+      if (i % 4 === 0) bass[i] = 0;
+      else if (i % 8 === 4 && dens > 0.4) bass[i] = scale[2] % 12;
+      else if (style === "wobble" && i % 2 === 0) bass[i] = (i % 4 === 0) ? 0 : scale[1];
+      else if (style === "glitch" && i % 3 === 0) bass[i] = scale[i % scale.length];
+
+      if (i % 2 === 0) hat[i] = style === "ambient" ? 0.2 : 0.45;
+      if (i % 4 === 2) hat[i] = Math.max(hat[i], 0.55);
+      if (style === "riot" || style === "spicy") hat[i] = i % 2 === 0 ? 0.7 : 0.25;
+
+      const leadChance = dens;
+      if (Math.sin(i * 1.7 + vibe.root * 0.01) * 0.5 + 0.5 < leadChance) {
+        if (i % 2 === 0 || dens > 0.7) {
+          lead[i] = scale[(i * 3 + Math.floor(vibe.root / 37)) % scale.length];
+          if (style === "crystal" || style === "cosmic" || style === "golden" || style === "majestic") {
+            if (i % 4 === 0) lead[i] = scale[(i / 4) % scale.length] + 12;
+          }
+          if (style === "chip") lead[i] = scale[i % scale.length] + (i % 8 < 4 ? 12 : 0);
+        }
+      }
+      if (style === "noir" && i % 4 === 0) lead[i] = scale[0] + (i % 8 === 0 ? 0 : 7);
+      if (style === "ghost" && i % 8 === 0) lead[i] = scale[4] + 12;
+      if (style === "candy" && i % 2 === 0) lead[i] = scale[(i / 2) % scale.length] + 12;
+    }
+    return { bass, lead, hat, steps, vibe };
+  }
+
+  function musicNoteFreq(root, semitone) {
+    return root * Math.pow(2, semitone / 12);
+  }
+
+  function playMusicTone(freq, when, dur, type, gainVal, filterFreq) {
+    const ctx = musicEngine.ctx;
+    if (!ctx || !musicEngine.master) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const filt = ctx.createBiquadFilter();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, when);
+    filt.type = "lowpass";
+    filt.frequency.setValueAtTime(filterFreq || 1800, when);
+    filt.Q.value = 0.7;
+    const peak = Math.max(0.001, gainVal || 0.05);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(peak, when + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + Math.max(0.05, dur));
+    osc.connect(filt);
+    filt.connect(g);
+    g.connect(musicEngine.master);
+    osc.start(when);
+    osc.stop(when + dur + 0.05);
+  }
+
+  function playMusicNoise(when, dur, gainVal) {
+    const ctx = musicEngine.ctx;
+    if (!ctx || !musicEngine.master) return;
+    const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    const filt = ctx.createBiquadFilter();
+    filt.type = "highpass";
+    filt.frequency.value = 4000;
+    g.gain.setValueAtTime(Math.max(0.0001, gainVal || 0.03), when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    src.connect(filt);
+    filt.connect(g);
+    g.connect(musicEngine.master);
+    src.start(when);
+    src.stop(when + dur + 0.02);
+  }
+
+  function scheduleMusicStep() {
+    if (!musicEngine.ctx || !musicEngine.pattern || !musicEngine.track) return;
+    const ctx = musicEngine.ctx;
+    const lookAhead = 0.12;
+    const pattern = musicEngine.pattern;
+    const vibe = pattern.vibe;
+    const stepDur = 60 / Math.max(40, vibe.bpm) / 2; // 8th notes
+    const bright = vibe.brightness || 0.5;
+    const wave = vibe.wave || "sine";
+    const style = vibe.style;
+
+    while (musicEngine.nextTime < ctx.currentTime + lookAhead) {
+      const i = musicEngine.step % pattern.steps;
+      const t = musicEngine.nextTime;
+      const root = vibe.root;
+
+      if (pattern.bass[i] >= 0) {
+        const f = musicNoteFreq(root, pattern.bass[i]);
+        const bassWave = style === "wobble" || style === "rumble" || style === "glitch" ? "sawtooth" : "triangle";
+        playMusicTone(f, t, stepDur * 1.4, bassWave, 0.07 * bright, 420);
+        if (style === "wobble") {
+          playMusicTone(f * 1.01, t, stepDur * 1.2, "sawtooth", 0.035 * bright, 500);
+        }
+      }
+
+      if (pattern.lead[i] >= 0) {
+        const f = musicNoteFreq(root, pattern.lead[i]);
+        let leadWave = wave;
+        let leadGain = 0.045 * bright;
+        let filt = 1200 + bright * 1600;
+        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.2 : 1.05);
+        if (style === "synth" || style === "neon") {
+          leadWave = "sawtooth";
+          leadGain = 0.04 * bright;
+        }
+        if (style === "chip" || style === "robot") {
+          leadWave = "square";
+          leadGain = 0.035 * bright;
+          filt = 2200;
+        }
+        if (style === "crystal" || style === "cosmic" || style === "golden") {
+          leadWave = "sine";
+          playMusicTone(f * 2, t, dur * 0.8, "sine", leadGain * 0.45, 3200);
+        }
+        if (style === "glitch" && i % 5 === 0) {
+          playMusicTone(f * (1 + (i % 3) * 0.07), t, stepDur * 0.4, "square", 0.03, 1800);
+        }
+        playMusicTone(f, t, dur, leadWave, leadGain, filt);
+      }
+
+      if (pattern.hat[i] > 0 && style !== "ethereal") {
+        const hatGain = 0.018 * pattern.hat[i] * (style === "stealth" ? 0.4 : 1);
+        playMusicNoise(t, stepDur * 0.35, hatGain);
+      }
+
+      // Soft pad drone for ambient / void / ghost styles
+      if (i === 0 && (style === "ambient" || style === "noir" || style === "hollow" || style === "regal" || style === "ghost" || style === "void" || style === "glitch")) {
+        playMusicTone(root / 2, t, stepDur * pattern.steps * 0.9, "sine", 0.03 * bright, 350);
+      }
+
+      musicEngine.nextTime += stepDur;
+      musicEngine.step += 1;
+    }
+  }
+
+  function stopMusicLoop() {
+    if (musicEngine.timerId) {
+      clearInterval(musicEngine.timerId);
+      musicEngine.timerId = 0;
+    }
+    musicEngine.playingId = null;
+    musicEngine.pattern = null;
+    musicEngine.track = null;
+    musicEngine.previewing = false;
+  }
+
+  function startMusicTrack(trackId, asPreview) {
+    const track = MUSIC_BY_ID[trackId] || getEquippedMusic();
+    if (!track) return;
+    if (musicMuted && !asPreview) {
+      // Still allow preview in shop when muted? Prefer respect mute always.
+      stopMusicLoop();
+      return;
+    }
+    const ctx = ensureMusicContext();
+    if (!ctx) return;
+    if (musicEngine.playingId === track.id && musicEngine.previewing === !!asPreview && musicEngine.timerId) {
+      applyMusicGains();
+      return;
+    }
+    stopMusicLoop();
+    if (musicMuted) return;
+    musicEngine.track = track;
+    musicEngine.pattern = buildMusicPattern(track);
+    musicEngine.playingId = track.id;
+    musicEngine.previewing = !!asPreview;
+    musicEngine.step = 0;
+    musicEngine.nextTime = ctx.currentTime + 0.05;
+    applyMusicGains();
+    scheduleMusicStep();
+    musicEngine.timerId = setInterval(scheduleMusicStep, 40);
+  }
+
+  function syncBackgroundMusic() {
+    // Shop music tab uses preview; otherwise BGM on ready/play/over
+    if (!shopModal.classList.contains("hidden") && shopTab === "music") {
+      startMusicTrack(shopPreviewMusicId || equippedMusicId, true);
+      return;
+    }
+    if (musicMuted) {
+      stopMusicLoop();
+      return;
+    }
+    if (state === STATE.READY || state === STATE.PLAYING || state === STATE.OVER) {
+      startMusicTrack(equippedMusicId, false);
+    } else {
+      stopMusicLoop();
+    }
+  }
+
+  function setMusicMuted(muted) {
+    musicMuted = !!muted;
+    persistMusicMute();
+    applyMusicGains();
+    if (musicMuted) stopMusicLoop();
+    else syncBackgroundMusic();
+    syncMusicHud();
+  }
+
+  function setMusicVolume(vol) {
+    musicVolume = Math.max(0, Math.min(1, Number(vol) || 0));
+    persistMusicVolume();
+    applyMusicGains();
+    syncMusicHud();
+  }
+
+  function syncMusicHud() {
+    const muteBtn = document.getElementById("btn-music-mute");
+    const vol = document.getElementById("music-volume");
+    if (muteBtn) {
+      muteBtn.setAttribute("aria-pressed", musicMuted ? "true" : "false");
+      muteBtn.textContent = musicMuted ? "🔇" : "🔊";
+      muteBtn.title = musicMuted ? "Unmute music" : "Mute music";
+    }
+    if (vol) {
+      vol.value = String(Math.round(musicVolume * 100));
+      vol.disabled = musicMuted;
+    }
+  }
 
   // --- Period helpers (UTC) ---
   function pad2(n) {
@@ -1345,6 +1752,7 @@
     document.body.classList.toggle("ready", state === STATE.READY);
     document.body.classList.toggle("playing", state === STATE.PLAYING);
     document.body.classList.toggle("over", state === STATE.OVER);
+    syncBackgroundMusic();
   }
 
   function openPage(el) {
@@ -1737,6 +2145,70 @@
     pctx.restore();
   }
 
+  function drawMusicPreview(c, track) {
+    const pctx = c.getContext("2d");
+    const pw = c.width;
+    const ph = c.height;
+    pctx.clearRect(0, 0, pw, ph);
+    const g = pctx.createLinearGradient(0, 0, 0, ph);
+    g.addColorStop(0, "#0f172a");
+    g.addColorStop(1, "#1e293b");
+    pctx.fillStyle = g;
+    pctx.fillRect(0, 0, pw, ph);
+    const color = track.color || "#e9c46a";
+    const accent = track.accent || color;
+    const vibe = track.vibe || MUSIC_VIBES.coral;
+    const bars = 12;
+    const gap = 3;
+    const barW = (pw - 20 - gap * (bars - 1)) / bars;
+    for (let i = 0; i < bars; i++) {
+      const n = 0.25 + 0.75 * Math.abs(Math.sin(i * 0.85 + vibe.root * 0.02));
+      const h = 10 + n * (ph - 28);
+      const x = 10 + i * (barW + gap);
+      const y = (ph - h) / 2;
+      pctx.fillStyle = i % 2 === 0 ? color : accent;
+      pctx.globalAlpha = 0.55 + n * 0.4;
+      pctx.fillRect(x, y, barW, h);
+    }
+    pctx.globalAlpha = 1;
+    pctx.fillStyle = "rgba(255,255,255,0.85)";
+    pctx.font = "bold 10px system-ui,sans-serif";
+    pctx.textAlign = "center";
+    pctx.fillText("♪ " + (vibe.style || "loop"), pw / 2, ph - 6);
+  }
+
+  function drawMusicLivePreview(c, track) {
+    const pctx = c.getContext("2d");
+    const pw = c.width;
+    const ph = c.height;
+    pctx.clearRect(0, 0, pw, ph);
+    const g = pctx.createLinearGradient(0, 0, pw, ph);
+    g.addColorStop(0, "#0b1224");
+    g.addColorStop(1, "#1a1030");
+    pctx.fillStyle = g;
+    pctx.fillRect(0, 0, pw, ph);
+    const color = track.color || "#e9c46a";
+    const accent = track.accent || color;
+    const vibe = track.vibe || MUSIC_VIBES.coral;
+    const bars = 16;
+    const gap = 3;
+    const barW = (pw - 24 - gap * (bars - 1)) / bars;
+    for (let i = 0; i < bars; i++) {
+      const pulse = 0.35 + 0.65 * Math.abs(Math.sin(frames * 0.18 + i * 0.55));
+      const h = 12 + pulse * (ph - 36);
+      const x = 12 + i * (barW + gap);
+      const y = ph - 14 - h;
+      pctx.fillStyle = i % 3 === 0 ? accent : color;
+      pctx.globalAlpha = 0.45 + pulse * 0.5;
+      pctx.fillRect(x, y, barW, h);
+    }
+    pctx.globalAlpha = 1;
+    pctx.fillStyle = "rgba(255,255,255,0.9)";
+    pctx.font = "bold 11px system-ui,sans-serif";
+    pctx.textAlign = "center";
+    pctx.fillText(track.name + " · " + Math.round(vibe.bpm) + " BPM", pw / 2, 14);
+  }
+
   function drawTrailPreview(c, trail) {
     const pctx = c.getContext("2d");
     const pw = c.width;
@@ -1802,6 +2274,8 @@
         t.textContent = `Maps (${MAPS.length})`;
       } else if (kind === "trails") {
         t.textContent = `Light Trails (${TRAILS.length})`;
+      } else if (kind === "music") {
+        t.textContent = `Music (${MUSIC.length})`;
       } else {
         t.textContent = `Character Skins (${SKINS.length})`;
       }
@@ -1814,12 +2288,14 @@
     if (shopLiveEl) shopLiveEl.classList.toggle("hidden", isCurrencyTab);
     if (shopHintEl) {
       shopHintEl.innerHTML = isCurrencyTab
-        ? "Purchase <strong>Stardust</strong> packs here. Stardust unlocks Legendary skins, maps &amp; light trails."
+        ? "Purchase <strong>Stardust</strong> packs here. Stardust unlocks Legendary skins, maps, trails &amp; music."
         : shopTab === "maps"
           ? "Map themes grouped by rarity. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries."
           : shopTab === "trails"
             ? "Light trails grouped by rarity. Equip independently of your skin. Legendaries need <strong>Stardust</strong>."
-            : "Character skins grouped by rarity. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries.";
+            : shopTab === "music"
+              ? "Procedural tracks themed to each skin. Preview on select; equip for background music. Legendaries need <strong>Stardust</strong>."
+              : "Character skins grouped by rarity. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries.";
     }
   }
 
@@ -1828,6 +2304,7 @@
     const skin = SKIN_BY_ID[shopPreviewSkinId] || getEquippedSkin();
     const map = MAP_BY_ID[shopPreviewMapId] || getEquippedMap();
     const trail = TRAIL_BY_ID[shopPreviewTrailId] || getEquippedTrail();
+    const music = MUSIC_BY_ID[shopPreviewMusicId] || getEquippedMusic();
     const cx = shopLivePreview.width / 2 + 8;
     const cy = shopLivePreview.height / 2 + Math.sin(frames * 0.12) * 4;
     if (shopPreviewLabel) {
@@ -1837,9 +2314,15 @@
         shopPreviewLabel.textContent = `Map: ${map.name} · ${rarityLabel(map.rarity)}`;
       } else if (shopTab === "trails") {
         shopPreviewLabel.textContent = `Trail: ${trail.name} · ${rarityLabel(trail.rarity)}`;
+      } else if (shopTab === "music") {
+        shopPreviewLabel.textContent = `Music: ${music.name} · ${rarityLabel(music.rarity)} · preview`;
       } else {
         shopPreviewLabel.textContent = `Skin: ${skin.name} · ${rarityLabel(skin.rarity)}`;
       }
+    }
+    if (shopTab === "music") {
+      drawMusicLivePreview(shopLivePreview, music);
+      return;
     }
     pushLightTrailPoint(shopTrailPoints, cx, cy, trail, 2.4);
     drawSkinPreview(
@@ -1855,16 +2338,21 @@
   function appendShopCard(item, kind) {
     const isMap = kind === "maps";
     const isTrail = kind === "trails";
+    const isMusic = kind === "music";
     const owned = isMap
       ? ownedMaps.includes(item.id)
       : isTrail
         ? ownedTrails.includes(item.id)
-        : ownedSkins.includes(item.id);
+        : isMusic
+          ? ownedMusic.includes(item.id)
+          : ownedSkins.includes(item.id);
     const equipped = isMap
       ? equippedMapId === item.id
       : isTrail
         ? equippedTrailId === item.id
-        : equippedSkinId === item.id;
+        : isMusic
+          ? equippedMusicId === item.id
+          : equippedSkinId === item.id;
     const card = document.createElement("article");
     card.className =
       "skin-card rarity-" +
@@ -1909,6 +2397,10 @@
       else if (isTrail) {
         shopPreviewTrailId = item.id;
         shopTrailPoints = [];
+      } else if (isMusic) {
+        shopPreviewMusicId = item.id;
+        resumeMusicOnGesture();
+        syncBackgroundMusic();
       } else shopPreviewSkinId = item.id;
       updateShopLivePreview();
     };
@@ -1934,6 +2426,12 @@
           shopPreviewTrailId = item.id;
           trailPoints = [];
           shopTrailPoints = [];
+        } else if (isMusic) {
+          equippedMusicId = item.id;
+          persistEquippedMusic();
+          shopPreviewMusicId = item.id;
+          resumeMusicOnGesture();
+          syncBackgroundMusic();
         } else {
           equippedSkinId = item.id;
           persistEquippedSkin();
@@ -1956,7 +2454,8 @@
         if (!canAfford(item)) return;
         if (isMap && ownedMaps.includes(item.id)) return;
         if (isTrail && ownedTrails.includes(item.id)) return;
-        if (!isMap && !isTrail && ownedSkins.includes(item.id)) return;
+        if (isMusic && ownedMusic.includes(item.id)) return;
+        if (!isMap && !isTrail && !isMusic && ownedSkins.includes(item.id)) return;
         if (!spendForItem(item)) return;
         if (isMap) {
           ownedMaps.push(item.id);
@@ -1973,6 +2472,14 @@
           shopPreviewTrailId = item.id;
           trailPoints = [];
           shopTrailPoints = [];
+        } else if (isMusic) {
+          ownedMusic.push(item.id);
+          persistOwnedMusic();
+          equippedMusicId = item.id;
+          persistEquippedMusic();
+          shopPreviewMusicId = item.id;
+          resumeMusicOnGesture();
+          syncBackgroundMusic();
         } else {
           ownedSkins.push(item.id);
           persistOwnedSkins();
@@ -1993,6 +2500,7 @@
     shopGrid.appendChild(card);
     if (isMap) drawMapPreview(preview, item);
     else if (isTrail) drawTrailPreview(preview, item);
+    else if (isMusic) drawMusicPreview(preview, item);
     else drawSkinPreview(preview, item, MAP_BY_ID[item.id] || getEquippedMap(), null, 0, null);
   }
 
@@ -2005,15 +2513,34 @@
       return;
     }
     const catalog =
-      shopTab === "maps" ? MAPS : shopTab === "trails" ? TRAILS : SKINS;
-    const kind = shopTab === "maps" ? "maps" : shopTab === "trails" ? "trails" : "skins";
+      shopTab === "maps"
+        ? MAPS
+        : shopTab === "trails"
+          ? TRAILS
+          : shopTab === "music"
+            ? MUSIC
+            : SKINS;
+    const kind =
+      shopTab === "maps"
+        ? "maps"
+        : shopTab === "trails"
+          ? "trails"
+          : shopTab === "music"
+            ? "music"
+            : "skins";
     let items = sortByRarity(catalog);
     if (shopRarityFilter !== "all") {
       items = items.filter((it) => it.rarity === shopRarityFilter);
     }
 
     const kindNoun =
-      kind === "maps" ? "Maps" : kind === "trails" ? "Light Trails" : "Character Skins";
+      kind === "maps"
+        ? "Maps"
+        : kind === "trails"
+          ? "Light Trails"
+          : kind === "music"
+            ? "Music"
+            : "Character Skins";
     // Always show rarity sections with category-aware titles (no separate filter UI)
     shopRarityFilter = "all";
     for (const rarity of RARITY_SECTIONS) {
@@ -2036,10 +2563,13 @@
     shopPreviewSkinId = equippedSkinId;
     shopPreviewMapId = equippedMapId;
     shopPreviewTrailId = equippedTrailId;
+    shopPreviewMusicId = equippedMusicId;
     shopTrailPoints = [];
+    resumeMusicOnGesture();
     renderShop();
     shopModal.classList.remove("hidden");
     shopModal.setAttribute("aria-hidden", "false");
+    syncBackgroundMusic();
     if (shopPreviewAnimId) cancelAnimationFrame(shopPreviewAnimId);
     const tick = () => {
       if (shopModal.classList.contains("hidden")) return;
@@ -2057,10 +2587,12 @@
       cancelAnimationFrame(shopPreviewAnimId);
       shopPreviewAnimId = 0;
     }
+    syncBackgroundMusic();
   }
 
   btnShop.addEventListener("click", (e) => {
     e.stopPropagation();
+    resumeMusicOnGesture();
     openShop();
   });
   shopClose.addEventListener("click", closeShop);
@@ -2071,7 +2603,9 @@
     tab.addEventListener("click", () => {
       shopTab = tab.dataset.tab;
       shopTrailPoints = [];
+      resumeMusicOnGesture();
       renderShop();
+      syncBackgroundMusic();
     });
   });
   shopFilters.forEach((btn) => {
@@ -2080,6 +2614,35 @@
       renderShop();
     });
   });
+
+  (function wireMusicHud() {
+    const muteBtn = document.getElementById("btn-music-mute");
+    const vol = document.getElementById("music-volume");
+    if (muteBtn) {
+      muteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        resumeMusicOnGesture();
+        setMusicMuted(!musicMuted);
+      });
+    }
+    if (vol) {
+      vol.addEventListener("input", (e) => {
+        e.stopPropagation();
+        resumeMusicOnGesture();
+        setMusicVolume(Number(vol.value) / 100);
+        if (musicMuted && musicVolume > 0) setMusicMuted(false);
+        else syncBackgroundMusic();
+      });
+      vol.addEventListener("click", (e) => e.stopPropagation());
+      vol.addEventListener("mousedown", (e) => e.stopPropagation());
+      vol.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+    }
+    syncMusicHud();
+  })();
+
+  // First user gesture unlocks AudioContext (mobile browsers)
+  window.addEventListener("pointerdown", resumeMusicOnGesture, { once: false, passive: true });
+  window.addEventListener("keydown", resumeMusicOnGesture, { once: false });
 
   function showAdThen(callback) {
     adBlocking = true;
@@ -2128,6 +2691,9 @@
   persistEquippedSkin();
   persistOwnedTrails();
   persistEquippedTrail();
+  persistOwnedMusic();
+  persistEquippedMusic();
+  syncMusicHud();
 
   function resetGame() {
     state = STATE.READY;
@@ -2175,6 +2741,7 @@
   }
 
   function flap() {
+    resumeMusicOnGesture();
     if (adBlocking) return;
     if (!shopModal.classList.contains("hidden")) return;
     if (removeAdsPage && !removeAdsPage.classList.contains("hidden")) return;
