@@ -2763,6 +2763,17 @@
     playSfx("ui");
     openShop();
   });
+  if (shopMusicPreviewBtn) {
+    shopMusicPreviewBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = shopPreviewMusicId || equippedMusicId;
+      resumeMusicOnGesture();
+      startMusicTrack(id, true);
+      updateShopLivePreview();
+      playSfx("ui");
+    });
+  }
   shopClose.addEventListener("click", closeShop);
   shopModal.addEventListener("click", (e) => {
     if (e.target === shopModal) closeShop();
@@ -2965,6 +2976,21 @@
   }
 
   function onPointer(e) {
+    const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+    for (const n of path) {
+      if (!n || !n.id) continue;
+      if (
+        n.id === "btn-settings" ||
+        n.id === "btn-shop" ||
+        n.id === "btn-rank" ||
+        n.id === "btn-challenges" ||
+        n.id === "btn-remove-ads" ||
+        n.id === "currency-hud"
+      ) {
+        return;
+      }
+      if (n.classList && n.classList.contains("frame-rail")) return;
+    }
     e.preventDefault();
     flap();
   }
