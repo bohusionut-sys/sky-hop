@@ -20,7 +20,7 @@ No build step, no dependencies, no CDN assets.
 
 - **Click / tap** — flap (or restart after game over)
 - **Space** or **↑** — flap
-- **Shop** (top-left) — unlock/equip **skins** and **maps**; live preview with fairy trails; **Stardust** tab for currency packs
+- **Shop** (top-left) — unlock/equip **skins**, **maps**, and **light trails**; live preview; **Stardust** tab for currency packs
 - **Rank** (top-center) — full-page daily/weekly/monthly leaderboards
 - **No Ads** (mid-right) — full-page £1.99 remove-ads offer
 
@@ -35,8 +35,8 @@ No build step, no dependencies, no CDN assets.
 
 | Currency | How to earn | Spent on |
 |----------|-------------|----------|
-| **Coins** | Distance traveled (`1` per 40px) | Common / Rare / Epic skins & maps |
-| **Stardust** | `1` per **25 pipes** cleared, or Shop → Stardust packs | Legendary skins & maps only |
+| **Coins** | Distance traveled (`1` per 40px) | Common / Rare / Epic skins, maps & trails |
+| **Stardust** | `1` per **25 pipes** cleared, or Shop → Stardust packs | Legendary skins, maps & trails only |
 
 Balances show in the **top-right** HUD (coins + stardust). Canonical key is `skyHopStarDust`; legacy `skyHopGems` migrates once (max) then is removed.
 
@@ -50,9 +50,9 @@ Buy from **Shop → Stardust** tab:
 | 15 Stardust | £1.99 |
 | 40 Stardust | £4.99 |
 
-### Skin & map rarities
+### Skin, map & trail rarities
 
-Skins and maps share the same names/tiers (one map themed to each costume). Shop grids group items under **Legendary / Epic / Rare / Common** section headers.
+Skins, maps, and trails share the same names/tiers (one map and one light trail themed to each costume). Shop grids group items under **Legendary / Epic / Rare / Common** section headers.
 
 | Rarity | Examples | Price |
 |--------|----------|-------|
@@ -61,20 +61,21 @@ Skins and maps share the same names/tiers (one map themed to each costume). Shop
 | **Epic** | Candy Crash (2200), Ghost Drift (2800), Golden Idol (3600) | Coins |
 | **Legendary** | Toxic Slime (25), Void Glitch (35), Cosmic Drift (50), Obsidian King (75) | **Stardust only** |
 
-Fairy trails behind the bird scale with rarity. Equipped maps recolor sky, hills, pipes, and ground procedurally.
+**Light trails** are a smooth glowing ribbon behind the bird (motion-blur streak). Quality scales with rarity (common = soft streak → legendary = richer multi-layer glow). Trails equip independently of skins (`skyHopOwnedTrails` / `skyHopEquippedTrail`); default Coral trail is free and equipped. Equipped maps recolor sky, hills, pipes, and ground procedurally.
 
 ## Features
 
 - **Skin shop** — ~20 procedural skins with rarity sections, filters, Buy/Equip
 - **Map shop** — ~20 themed stages, same rarity/pricing as paired skins
+- **Trail shop** — ~20 light trails (one per design), same rarity/pricing; live preview
 - **Stardust shop tab** — simulated currency packs for legendary unlocks
-- **Fairy trails** — per-skin particle trails in gameplay + live shop preview
+- **Light trails** — rarity-scaled glowing ribbons in gameplay + shop preview
 - **Local leaderboards** — Daily / Weekly / Monthly on this device
 - **Ads (simulated)** — interstitial every 3 runs (skipped if ads removed)
 - **Remove ads** — £1.99 GBP via **No Ads** full-page popup (simulated purchase)
 
 ## Files
 
-- `index.html` — page shell, dual-currency HUD, shop tabs (Skins | Maps | Stardust), leaderboard, promo, overlays
+- `index.html` — page shell, dual-currency HUD, shop tabs (Skins | Maps | Trails | Stardust), leaderboard, promo, overlays
 - `style.css` — responsive layout + rarity section styling
-- `game.js` — game loop, physics, skins, maps, trails, persistence
+- `game.js` — game loop, physics, skins, maps, light trails, persistence

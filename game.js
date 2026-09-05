@@ -31,6 +31,8 @@
   const STARDUST_KEY_LEGACY_GEMS = "skyHopGems";
   const OWNED_MAPS_KEY = "skyHopOwnedMaps";
   const EQUIPPED_MAP_KEY = "skyHopEquippedMap";
+  const OWNED_TRAILS_KEY = "skyHopOwnedTrails";
+  const EQUIPPED_TRAIL_KEY = "skyHopEquippedTrail";
 
   // Coins: 1 coin per this many pixels of horizontal travel
   const PIXELS_PER_COIN = 40;
@@ -468,6 +470,18 @@
   const MAP_BY_ID = Object.fromEntries(MAPS.map((m) => [m.id, m]));
   const DEFAULT_MAP_ID = "coral";
 
+  // --- Light trails (~20) — one per design, same ids/names/pricing as skins ---
+  const TRAILS = SKINS.map((s) => ({
+    id: s.id,
+    name: s.name,
+    price: s.price,
+    rarity: s.rarity,
+    currency: s.currency,
+    color: s.trailColor,
+    accent: s.trailAccent,
+  }));
+  const TRAIL_BY_ID = Object.fromEntries(TRAILS.map((t) => [t.id, t]));
+  const DEFAULT_TRAIL_ID = "coral";
 
   // --- State ---
   const STATE = { READY: 0, PLAYING: 1, OVER: 2 };
@@ -551,12 +565,33 @@
     equippedMapId = DEFAULT_MAP_ID;
   }
 
-  let shopTab = "skins"; // skins | maps | stardust
+  function loadOwnedTrails() {
+    let owned = [DEFAULT_TRAIL_ID];
+    try {
+      const raw = JSON.parse(localStorage.getItem(OWNED_TRAILS_KEY) || "null");
+      if (Array.isArray(raw) && raw.length) {
+        owned = raw.filter((id) => TRAIL_BY_ID[id]);
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    if (!owned.includes(DEFAULT_TRAIL_ID)) owned.unshift(DEFAULT_TRAIL_ID);
+    return Array.from(new Set(owned));
+  }
+
+  let ownedTrails = loadOwnedTrails();
+  let equippedTrailId = localStorage.getItem(EQUIPPED_TRAIL_KEY) || DEFAULT_TRAIL_ID;
+  if (!TRAIL_BY_ID[equippedTrailId] || !ownedTrails.includes(equippedTrailId)) {
+    equippedTrailId = DEFAULT_TRAIL_ID;
+  }
+
+  let shopTab = "skins"; // skins | maps | trails | stardust
   let shopRarityFilter = "all";
   let shopPreviewSkinId = equippedSkinId;
   let shopPreviewMapId = equippedMapId;
-  let trailParticles = [];
-  let shopTrailParticles = [];
+  let shopPreviewTrailId = equippedTrailId;
+  let trailPoints = [];
+  let shopTrailPoints = [];
   let shopPreviewAnimId = 0;
 
   function persistOwnedSkins() {
@@ -581,6 +616,18 @@
 
   function getEquippedMap() {
     return MAP_BY_ID[equippedMapId] || MAP_BY_ID[DEFAULT_MAP_ID];
+  }
+
+  function persistOwnedTrails() {
+    localStorage.setItem(OWNED_TRAILS_KEY, JSON.stringify(ownedTrails));
+  }
+
+  function persistEquippedTrail() {
+    localStorage.setItem(EQUIPPED_TRAIL_KEY, equippedTrailId);
+  }
+
+  function getEquippedTrail() {
+    return TRAIL_BY_ID[equippedTrailId] || TRAIL_BY_ID[DEFAULT_TRAIL_ID];
   }
 
   function applyMapPalette(map) {
@@ -931,111 +978,97 @@
     });
   }
 
-  function trailBudget(rarity) {
-    if (rarity === "legendary") return { rate: 2, life: 1.0, life: 28, max: 48 };
-    if (rarity === "epic") return { rate: 2, size: 0.85, life: 22, max: 36 };
-    if (rarity === "rare") return { rate: 1, size: 0.7, life: 18, max: 28 };
-    return { rate: 1, size: 0.55, life: 12, max: 18 };
+  function trailQuality(rarity) {
+    if (rarity === "legendary") {
+      return { maxPts: 30, width: 13, layers: 3, glow: 1 };
+    }
+    if (rarity === "epic") {
+      return { maxPts: 24, width: 10, layers: 3, glow: 0.88 };
+    }
+    if (rarity === "rare") {
+      return { maxPts: 18, width: 7.5, layers: 2, glow: 0.72 };
+    }
+    return { maxPts: 12, width: 5, layers: 1, glow: 0.55 };
   }
 
-  function spawnTrailParticle(list, x, y, skin, flapBoost) {
-    const cfg = trailBudget(skin.rarity || "common");
-    if (list.length > cfg.max) list.splice(0, list.length - cfg.max);
-    const style = skin.trailStyle || "sparkle";
-    const n = cfg.rate + (flapBoost ? 1 : 0);
-    for (let i = 0; i < n; i++) {
-      const useAccent = Math.random() > 0.55;
+  function pushLightTrailPoint(list, x, y, trail, drift) {
+    const q = trailQuality(trail.rarity || "common");
+    const d = drift == null ? pipeSpeed * 0.85 : drift;
+    for (let i = 0; i < list.length; i++) {
+      list[i].x -= d;
+    }
+    list.push({ x, y });
+    while (list.length > q.maxPts) list.shift();
+  }
+
+  function seedShopLightTrail(list, trail, cx, cy) {
+    list.length = 0;
+    const q = trailQuality(trail.rarity || "common");
+    for (let i = 0; i < q.maxPts; i++) {
+      const t = i / Math.max(1, q.maxPts - 1);
       list.push({
-        x: x - 10 - Math.random() * 8,
-        y: y + (Math.random() - 0.5) * 10,
-        vx: -0.6 - Math.random() * 1.2,
-        vy: (Math.random() - 0.5) * 0.8,
-        life: cfg.life + (Math.random() * 8) | 0,
-        maxLife: cfg.life + 8,
-        size: (1.5 + Math.random() * 2.5) * cfg.size,
-        color: useAccent ? skin.trailAccent : skin.trailColor,
-        style,
-        spin: Math.random() * Math.PI * 2,
+        x: cx - (1 - t) * (q.maxPts * 3.2),
+        y: cy + Math.sin(t * Math.PI * 2.2) * 6 * (1 - t),
       });
     }
   }
 
-  function updateTrailList(list) {
-    for (let i = list.length - 1; i >= 0; i--) {
-      const p = list[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.02;
-      p.life--;
-      p.spin += 0.12;
-      if (p.style === "slime") p.vy += 0.04;
-      if (p.style === "void" || p.style === "cosmic") {
-        p.vx += Math.sin(p.spin) * 0.05;
-        p.vy += Math.cos(p.spin) * 0.04;
-      }
-      if (p.life <= 0) list.splice(i, 1);
-    }
-  }
+  function drawLightTrail(c, list, trail) {
+    if (!list || list.length < 2 || !trail) return;
+    const q = trailQuality(trail.rarity || "common");
+    const n = list.length;
+    const color = trail.color || "#e9c46a";
+    const accent = trail.accent || color;
 
-  function drawTrailList(c, list) {
-    for (const p of list) {
-      const a = Math.max(0, p.life / p.maxLife);
-      c.save();
-      c.globalAlpha = a * 0.85;
-      c.translate(p.x, p.y);
-      c.rotate(p.spin * 0.25);
-      c.fillStyle = p.color;
-      if (p.style === "pixel") {
-        c.fillRect(-p.size, -p.size, p.size * 2, p.size * 2);
-      } else if (p.style === "void" || p.style === "obsidian") {
-        c.shadowColor = p.color;
-        c.shadowBlur = 8;
-        c.beginPath();
-        c.moveTo(0, -p.size);
-        c.lineTo(p.size, 0);
-        c.lineTo(0, p.size);
-        c.lineTo(-p.size, 0);
-        c.closePath();
-        c.fill();
-      } else if (p.style === "cosmic" || p.style === "dust" || p.style === "candy") {
-        c.shadowColor = p.color;
-        c.shadowBlur = 6;
-        c.beginPath();
-        for (let i = 0; i < 5; i++) {
-          const ang = (i / 5) * Math.PI * 2 - Math.PI / 2;
-          const r = i % 2 === 0 ? p.size : p.size * 0.45;
-          const px = Math.cos(ang) * r;
-          const py = Math.sin(ang) * r;
-          if (i === 0) c.moveTo(px, py);
-          else c.lineTo(px, py);
-        }
-        c.closePath();
-        c.fill();
-      } else if (p.style === "mist" || p.style === "wisp" || p.style === "slime") {
-        c.beginPath();
-        c.ellipse(0, 0, p.size * 1.4, p.size * 0.8, 0.3, 0, Math.PI * 2);
-        c.fill();
-      } else if (p.style === "neon" || p.style === "spark") {
-        c.shadowColor = p.color;
-        c.shadowBlur = 10;
-        c.fillRect(-p.size * 1.6, -1, p.size * 3.2, 2);
-        c.beginPath();
-        c.arc(0, 0, p.size * 0.6, 0, Math.PI * 2);
-        c.fill();
-      } else {
-        // sparkle / ember default
-        c.beginPath();
-        c.arc(0, 0, p.size, 0, Math.PI * 2);
-        c.fill();
-        if (p.style === "ember") {
-          c.globalAlpha = a * 0.4;
-          c.beginPath();
-          c.arc(0, -p.size, p.size * 0.5, 0, Math.PI * 2);
-          c.fill();
-        }
-      }
-      c.restore();
+    const layers = [];
+    if (q.layers >= 1) {
+      layers.push({ wMul: 1, aMul: q.layers === 1 ? 0.42 : 0.18, col: accent });
     }
+    if (q.layers >= 2) {
+      layers.push({ wMul: 0.55, aMul: 0.4, col: color });
+    }
+    if (q.layers >= 3) {
+      layers.push({ wMul: 0.22, aMul: 0.75, col: "#ffffff" });
+    }
+
+    c.save();
+    c.lineCap = "round";
+    c.lineJoin = "round";
+    c.globalCompositeOperation = "lighter";
+
+    for (const layer of layers) {
+      for (let i = 1; i < n; i++) {
+        const t = i / (n - 1);
+        const fade = t * t;
+        const a = fade * layer.aMul * q.glow;
+        if (a < 0.02) continue;
+        const w = q.width * layer.wMul * (0.2 + 0.8 * t);
+        c.globalAlpha = Math.min(1, a);
+        c.strokeStyle = layer.col;
+        c.lineWidth = w;
+        c.beginPath();
+        c.moveTo(list[i - 1].x, list[i - 1].y);
+        c.lineTo(list[i].x, list[i].y);
+        c.stroke();
+      }
+    }
+
+    const tip = list[n - 1];
+    const tipR = q.width * (0.35 + 0.15 * q.layers);
+    c.globalAlpha = 0.35 * q.glow;
+    c.fillStyle = color;
+    c.beginPath();
+    c.arc(tip.x, tip.y, tipR, 0, Math.PI * 2);
+    c.fill();
+    if (q.layers >= 2) {
+      c.globalAlpha = 0.25 * q.glow;
+      c.fillStyle = accent;
+      c.beginPath();
+      c.arc(tip.x, tip.y, tipR * 1.6, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    c.restore();
   }
 
   function persistRuns() {
@@ -1198,7 +1231,7 @@
   });
 
   // --- Shop UI ---
-  function drawSkinPreview(c, skin, map, trailList, wingPhase) {
+  function drawSkinPreview(c, skin, map, trailList, wingPhase, trail) {
     const pctx = c.getContext("2d");
     const pw = c.width;
     const ph = c.height;
@@ -1215,11 +1248,31 @@
     pctx.fillStyle = theme.pipe;
     pctx.fillRect(pw - 28, 8, 12, ph - 28);
     pctx.fillRect(8, 18, 10, ph - 38);
-    if (trailList && trailList.length) drawTrailList(pctx, trailList);
+    if (trailList && trailList.length && trail) drawLightTrail(pctx, trailList, trail);
     pctx.save();
     pctx.translate(pw / 2 + 8, ph / 2);
     pctx.scale(1.05, 1.05);
     drawBirdOn(pctx, skin, wingPhase || 0, true);
+    pctx.restore();
+  }
+
+  function drawTrailPreview(c, trail) {
+    const pctx = c.getContext("2d");
+    const pw = c.width;
+    const ph = c.height;
+    pctx.clearRect(0, 0, pw, ph);
+    const g = pctx.createLinearGradient(0, 0, 0, ph);
+    g.addColorStop(0, "#0f172a");
+    g.addColorStop(1, "#1e293b");
+    pctx.fillStyle = g;
+    pctx.fillRect(0, 0, pw, ph);
+    const pts = [];
+    seedShopLightTrail(pts, trail, pw * 0.72, ph * 0.5);
+    drawLightTrail(pctx, pts, trail);
+    pctx.save();
+    pctx.translate(pw * 0.72, ph * 0.5);
+    pctx.scale(0.7, 0.7);
+    drawBirdOn(pctx, getEquippedSkin(), 0, true);
     pctx.restore();
   }
 
@@ -1264,10 +1317,12 @@
       const kind = t.dataset.tab;
       if (kind === "stardust") {
         t.textContent = "Stardust";
+      } else if (kind === "maps") {
+        t.textContent = `Maps (${MAPS.length})`;
+      } else if (kind === "trails") {
+        t.textContent = `Trails (${TRAILS.length})`;
       } else {
-        const count = kind === "maps" ? MAPS.length : SKINS.length;
-        const base = kind === "maps" ? "Maps" : "Skins";
-        t.textContent = `${base} (${count})`;
+        t.textContent = `Skins (${SKINS.length})`;
       }
     });
     shopFilters.forEach((f) => {
@@ -1277,8 +1332,8 @@
     if (shopLiveEl) shopLiveEl.classList.toggle("hidden", isCurrencyTab);
     if (shopHintEl) {
       shopHintEl.innerHTML = isCurrencyTab
-        ? "Purchase <strong>Stardust</strong> packs with simulated GBP checkout. Stardust unlocks Legendary skins &amp; maps."
-        : "Grouped by rarity. Coins unlock Common–Epic. <strong>Stardust</strong> unlocks Legendaries only (earn 1 per 25 pipes, or buy packs in the Stardust tab).";
+        ? "Purchase <strong>Stardust</strong> packs with simulated GBP checkout. Stardust unlocks Legendary skins, maps &amp; trails."
+        : "Grouped by rarity. Coins unlock Common–Epic. <strong>Stardust</strong> unlocks Legendaries only (earn 1 per 25 pipes, or buy packs in the Stardust tab). Trails equip independently of skins.";
     }
   }
 
@@ -1286,27 +1341,44 @@
     if (!shopLivePreview) return;
     const skin = SKIN_BY_ID[shopPreviewSkinId] || getEquippedSkin();
     const map = MAP_BY_ID[shopPreviewMapId] || getEquippedMap();
+    const trail = TRAIL_BY_ID[shopPreviewTrailId] || getEquippedTrail();
+    const cx = shopLivePreview.width / 2 + 8;
+    const cy = shopLivePreview.height / 2 + Math.sin(frames * 0.12) * 4;
     if (shopPreviewLabel) {
       if (shopTab === "stardust") {
         shopPreviewLabel.textContent = "Stardust packs";
+      } else if (shopTab === "maps") {
+        shopPreviewLabel.textContent = `Map: ${map.name} · ${rarityLabel(map.rarity)}`;
+      } else if (shopTab === "trails") {
+        shopPreviewLabel.textContent = `Trail: ${trail.name} · ${rarityLabel(trail.rarity)}`;
       } else {
-        shopPreviewLabel.textContent =
-          shopTab === "maps"
-            ? `Map: ${map.name} · ${rarityLabel(map.rarity)}`
-            : `Skin: ${skin.name} · ${rarityLabel(skin.rarity)}`;
+        shopPreviewLabel.textContent = `Skin: ${skin.name} · ${rarityLabel(skin.rarity)}`;
       }
     }
-    // animate trail for preview
-    if (frames % 2 === 0) {
-      spawnTrailParticle(shopTrailParticles, shopLivePreview.width / 2 - 4, shopLivePreview.height / 2, skin, frames % 20 < 4);
-    }
-    updateTrailList(shopTrailParticles);
-    drawSkinPreview(shopLivePreview, skin, map, shopTrailParticles, Math.sin(frames * 0.25));
+    pushLightTrailPoint(shopTrailPoints, cx, cy, trail, 2.4);
+    drawSkinPreview(
+      shopLivePreview,
+      skin,
+      map,
+      shopTrailPoints,
+      Math.sin(frames * 0.25),
+      trail
+    );
   }
 
-  function appendShopCard(item, isMap) {
-    const owned = isMap ? ownedMaps.includes(item.id) : ownedSkins.includes(item.id);
-    const equipped = isMap ? equippedMapId === item.id : equippedSkinId === item.id;
+  function appendShopCard(item, kind) {
+    const isMap = kind === "maps";
+    const isTrail = kind === "trails";
+    const owned = isMap
+      ? ownedMaps.includes(item.id)
+      : isTrail
+        ? ownedTrails.includes(item.id)
+        : ownedSkins.includes(item.id);
+    const equipped = isMap
+      ? equippedMapId === item.id
+      : isTrail
+        ? equippedTrailId === item.id
+        : equippedSkinId === item.id;
     const card = document.createElement("article");
     card.className =
       "skin-card rarity-" +
@@ -1348,7 +1420,10 @@
 
     const selectPreview = () => {
       if (isMap) shopPreviewMapId = item.id;
-      else shopPreviewSkinId = item.id;
+      else if (isTrail) {
+        shopPreviewTrailId = item.id;
+        shopTrailPoints = [];
+      } else shopPreviewSkinId = item.id;
       updateShopLivePreview();
     };
     card.addEventListener("click", selectPreview);
@@ -1367,11 +1442,16 @@
           persistEquippedMap();
           applyMapPalette(getEquippedMap());
           shopPreviewMapId = item.id;
+        } else if (isTrail) {
+          equippedTrailId = item.id;
+          persistEquippedTrail();
+          shopPreviewTrailId = item.id;
+          trailPoints = [];
+          shopTrailPoints = [];
         } else {
           equippedSkinId = item.id;
           persistEquippedSkin();
           shopPreviewSkinId = item.id;
-          trailParticles = [];
         }
         renderShop();
       });
@@ -1389,7 +1469,8 @@
         e.stopPropagation();
         if (!canAfford(item)) return;
         if (isMap && ownedMaps.includes(item.id)) return;
-        if (!isMap && ownedSkins.includes(item.id)) return;
+        if (isTrail && ownedTrails.includes(item.id)) return;
+        if (!isMap && !isTrail && ownedSkins.includes(item.id)) return;
         if (!spendForItem(item)) return;
         if (isMap) {
           ownedMaps.push(item.id);
@@ -1398,13 +1479,20 @@
           persistEquippedMap();
           applyMapPalette(getEquippedMap());
           shopPreviewMapId = item.id;
+        } else if (isTrail) {
+          ownedTrails.push(item.id);
+          persistOwnedTrails();
+          equippedTrailId = item.id;
+          persistEquippedTrail();
+          shopPreviewTrailId = item.id;
+          trailPoints = [];
+          shopTrailPoints = [];
         } else {
           ownedSkins.push(item.id);
           persistOwnedSkins();
           equippedSkinId = item.id;
           persistEquippedSkin();
           shopPreviewSkinId = item.id;
-          trailParticles = [];
         }
         renderShop();
       });
@@ -1418,7 +1506,8 @@
     card.appendChild(actions);
     shopGrid.appendChild(card);
     if (isMap) drawMapPreview(preview, item);
-    else drawSkinPreview(preview, item, MAP_BY_ID[item.id] || getEquippedMap(), null, 0);
+    else if (isTrail) drawTrailPreview(preview, item);
+    else drawSkinPreview(preview, item, MAP_BY_ID[item.id] || getEquippedMap(), null, 0, null);
   }
 
   function renderShop() {
@@ -1429,8 +1518,9 @@
       renderStardustPacks();
       return;
     }
-    const catalog = shopTab === "maps" ? MAPS : SKINS;
-    const isMap = shopTab === "maps";
+    const catalog =
+      shopTab === "maps" ? MAPS : shopTab === "trails" ? TRAILS : SKINS;
+    const kind = shopTab === "maps" ? "maps" : shopTab === "trails" ? "trails" : "skins";
     let items = sortByRarity(catalog);
     if (shopRarityFilter !== "all") {
       items = items.filter((it) => it.rarity === shopRarityFilter);
@@ -1447,12 +1537,12 @@
           `<span class="shop-section-count">${group.length}</span>`;
         shopGrid.appendChild(header);
         for (const item of group) {
-          appendShopCard(item, isMap);
+          appendShopCard(item, kind);
         }
       }
     } else {
       for (const item of items) {
-        appendShopCard(item, isMap);
+        appendShopCard(item, kind);
       }
     }
     updateShopLivePreview();
@@ -1461,7 +1551,8 @@
   function openShop() {
     shopPreviewSkinId = equippedSkinId;
     shopPreviewMapId = equippedMapId;
-    shopTrailParticles = [];
+    shopPreviewTrailId = equippedTrailId;
+    shopTrailPoints = [];
     renderShop();
     shopModal.classList.remove("hidden");
     shopModal.setAttribute("aria-hidden", "false");
@@ -1495,7 +1586,7 @@
   shopTabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       shopTab = tab.dataset.tab;
-      shopTrailParticles = [];
+      shopTrailPoints = [];
       renderShop();
     });
   });
@@ -1552,6 +1643,8 @@
   syncCoinHUD();
   persistOwnedSkins();
   persistEquippedSkin();
+  persistOwnedTrails();
+  persistEquippedTrail();
 
   function resetGame() {
     state = STATE.READY;
@@ -1562,7 +1655,7 @@
     runDistance = 0;
     coinsEarnedThisRun = 0;
     stardustEarnedThisRun = 0;
-    trailParticles = [];
+    trailPoints = [];
     bird.x = BIRD_X;
     bird.y = H / 2 - 20;
     bird.vy = 0;
@@ -1680,6 +1773,7 @@
     if (state === STATE.READY) {
       bird.y = H / 2 - 20 + Math.sin(frames * 0.08) * 8;
       bird.rot = Math.sin(frames * 0.08) * 0.12;
+      pushLightTrailPoint(trailPoints, bird.x - 6, bird.y, getEquippedTrail(), 2.2);
       return;
     }
 
@@ -1690,6 +1784,8 @@
       bird.rot = Math.min(Math.PI / 2, bird.rot + 0.08);
       const floor = H - GROUND_H - BIRD_R;
       if (bird.y > floor) bird.y = floor;
+      for (let i = 0; i < trailPoints.length; i++) trailPoints[i].x -= pipeSpeed * 0.35;
+      while (trailPoints.length > 2 && trailPoints[0].x < -40) trailPoints.shift();
       updateParticles();
       return;
     }
@@ -1737,12 +1833,9 @@
 
     updateParticles();
 
-    // Fairy trail behind equipped skin
-    const skin = getEquippedSkin();
-    if (frames % 2 === 0) {
-      spawnTrailParticle(trailParticles, bird.x, bird.y, skin, bird.wing > 0);
-    }
-    updateTrailList(trailParticles);
+    // Light trail behind bird (equipped trail, independent of skin)
+    const trail = getEquippedTrail();
+    pushLightTrailPoint(trailPoints, bird.x - 6, bird.y, trail);
   }
 
   function hitPipe(p) {
@@ -1804,7 +1897,7 @@
     drawPipes();
     drawGround();
     drawParticles();
-    drawTrailList(ctx, trailParticles);
+    drawLightTrail(ctx, trailPoints, getEquippedTrail());
     drawBird();
     drawHUD();
     if (flash > 0) {
