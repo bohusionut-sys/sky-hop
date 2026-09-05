@@ -1810,6 +1810,7 @@
   const shopLiveEl = document.querySelector(".shop-live");
   const shopLivePreview = document.getElementById("shop-live-preview");
   const shopPreviewLabel = document.getElementById("shop-preview-label");
+  const shopMusicPreviewBtn = document.getElementById("shop-music-preview-btn");
   const adOverlay = document.getElementById("ad-overlay");
   const adCountdown = document.getElementById("ad-countdown");
   const adContinue = document.getElementById("ad-continue");
@@ -2444,6 +2445,11 @@
       shopFiltersEl.hidden = true;
     }
     if (shopLiveEl) shopLiveEl.classList.toggle("hidden", isCurrencyTab);
+    if (shopMusicPreviewBtn) {
+      const showMusicPreview = !isCurrencyTab && shopTab === "music";
+      shopMusicPreviewBtn.classList.toggle("hidden", !showMusicPreview);
+      shopMusicPreviewBtn.hidden = !showMusicPreview;
+    }
     if (shopHintEl) {
       shopHintEl.innerHTML = isCurrencyTab
         ? "Purchase <strong>Stardust</strong> packs here. Stardust unlocks Legendary skins, maps, trails &amp; music."
