@@ -11,6 +11,11 @@
   <div id="app">
     <div id="main-col">
       <div id="wrap">
+        <div id="coin-hud" aria-live="polite" title="Coin balance">
+          <span class="coin-glyph" aria-hidden="true"></span>
+          <span id="coin-balance">0</span>
+        </div>
+        <button type="button" id="btn-shop" class="hud-btn" aria-label="Open skin shop">Shop</button>
         <canvas id="game" width="360" height="640" aria-label="Sky Hop game canvas"></canvas>
       </div>
 
@@ -47,6 +52,39 @@
         <p class="promo-desc">You’re all set — no more ad gates on this device.</p>
       </div>
     </aside>
+  </div>
+
+  <!-- Compact remove-ads banner (ready / game-over) -->
+  <div id="promo-banner" class="promo-banner hidden" aria-live="polite">
+    <div id="promo-banner-offer" class="promo-banner-inner">
+      <div class="promo-banner-text">
+        <strong>Remove ads</strong>
+        <span>£1.99 GBP · skip every-3-runs gate</span>
+      </div>
+      <button type="button" id="btn-buy-ads-banner" class="promo-btn promo-btn-sm">Buy</button>
+    </div>
+    <div id="promo-banner-thanks" class="promo-banner-inner promo-banner-thanks hidden">
+      <div class="promo-banner-text">
+        <strong>Ads removed</strong>
+        <span>Thanks for supporting Sky Hop</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skin shop -->
+  <div id="shop-modal" class="overlay hidden" aria-hidden="true" role="dialog" aria-label="Skin shop">
+    <div class="overlay-panel shop-panel">
+      <header class="shop-header">
+        <h2>Skin Shop</h2>
+        <div class="shop-coins">
+          <span class="coin-glyph" aria-hidden="true"></span>
+          <span id="shop-coin-balance">0</span>
+        </div>
+        <button type="button" id="shop-close" class="btn-ghost shop-close" aria-label="Close shop">Close</button>
+      </header>
+      <p class="shop-hint">Spend coins to unlock skins. Equip one at a time — saved on this device.</p>
+      <div id="shop-grid" class="shop-grid"></div>
+    </div>
   </div>
 
   <!-- Simulated interstitial ad -->
