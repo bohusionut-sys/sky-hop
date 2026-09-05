@@ -22,6 +22,7 @@ No build step, no dependencies, no CDN assets.
 - **Space** or **↑** — flap
 - **Shop** (top-left) — unlock/equip **skins**, **maps**, and **light trails**; live preview; **Stardust** tab for currency packs
 - **Rank** (top-center) — full-page daily/weekly/monthly leaderboards
+- **Challenges** (under Rank) — daily + lifetime goals with coin/Stardust rewards
 - **No Ads** (mid-right) — full-page £1.99 remove-ads offer
 
 ## Gameplay
@@ -39,6 +40,8 @@ No build step, no dependencies, no CDN assets.
 | **Stardust** | `1` per **25 pipes** cleared, or Shop → Stardust packs | Legendary skins, maps & trails only |
 
 Balances show in the **top-right** HUD (coins + stardust). Canonical key is `skyHopStarDust`; legacy `skyHopGems` migrates once (max) then is removed.
+
+**Challenges** add a paced free Stardust trickle (mostly coin rewards; rare 1–2 Stardust claims). Combined with pipe earn (~1 / 25 pipes), engaged free play targets ≈ **~6 Stardust/day** — roughly one cheapest legendary every ~4 days. Packs stay the fast path.
 
 ### Stardust packs (simulated GBP)
 
@@ -71,11 +74,12 @@ Skins, maps, and trails share the same names/tiers (one map and one light trail 
 - **Stardust shop tab** — simulated currency packs for legendary unlocks
 - **Light trails** — rarity-scaled glowing ribbons in gameplay + shop preview
 - **Local leaderboards** — Daily / Weekly / Monthly on this device
+- **Challenges** — Daily (UTC) + Lifetime goals; claim coins / small Stardust; paced so free play ≈ 1 cheap legendary / ~4 days
 - **Ads (simulated)** — interstitial every 3 runs (skipped if ads removed)
 - **Remove ads** — £1.99 GBP via **No Ads** full-page popup (simulated purchase)
 
 ## Files
 
-- `index.html` — page shell, dual-currency HUD, shop tabs (Skins | Maps | Trails | Stardust), leaderboard, promo, overlays
+- `index.html` — page shell, dual-currency HUD, shop tabs (Skins | Maps | Trails | Stardust), leaderboard, challenges, promo, overlays
 - `style.css` — responsive layout + rarity section styling
-- `game.js` — game loop, physics, skins, maps, light trails, persistence
+- `game.js` — game loop, physics, skins, maps, light trails, challenges, persistence

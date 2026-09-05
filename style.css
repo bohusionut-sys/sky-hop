@@ -54,6 +54,8 @@ body {
   --btn-rank-left: 50%;
   --btn-noads-top: 42%;
   --btn-noads-right: 10px;
+  --btn-challenges-top: 48px;
+  --btn-challenges-left: 50%;
 }
 
 #game {
@@ -147,6 +149,17 @@ body {
   z-index: 6;
 }
 
+/* Challenges: under Rank, same center column */
+#btn-challenges,
+.frame-btn-challenges {
+  position: absolute;
+  top: var(--btn-challenges-top);
+  left: var(--btn-challenges-left);
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: 120px;
+}
+
 /* RED mark: mid-right open sky beside bird */
 #btn-remove-ads,
 .frame-btn-remove {
@@ -171,14 +184,17 @@ body {
 
 /* Hide frame nav while playing; show on ready/over */
 body.playing #btn-rank,
+body.playing #btn-challenges,
 body.playing #btn-remove-ads {
   opacity: 0;
   pointer-events: none;
 }
 
 body.ready #btn-rank,
+body.ready #btn-challenges,
 body.ready #btn-remove-ads,
 body.over #btn-rank,
+body.over #btn-challenges,
 body.over #btn-remove-ads {
   opacity: 1;
   pointer-events: auto;
@@ -1192,6 +1208,152 @@ body.playing .promo-banner {
 
 .rank-body .lb-list {
   min-height: 200px;
+}
+
+/* --- Challenges page --- */
+.challenges-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.challenges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  min-height: 200px;
+  padding-bottom: 8px;
+}
+
+.challenge-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.challenge-card.complete {
+  border-color: rgba(64, 196, 176, 0.4);
+  background: rgba(42, 157, 143, 0.12);
+}
+
+.challenge-card.claimed {
+  opacity: 0.72;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.challenge-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.challenge-desc {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.35;
+}
+
+.challenge-reward {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f4d35e;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.challenge-reward .sd {
+  color: #e9d5ff;
+}
+
+.challenge-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.challenge-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.challenge-bar > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2a9d8f, #e9c46a);
+  transition: width 0.2s ease;
+}
+
+.challenge-card.complete .challenge-bar > span {
+  background: linear-gradient(90deg, #2a9d8f, #40c4b0);
+}
+
+.challenge-frac {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 4.5em;
+  text-align: right;
+}
+
+.challenge-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.challenge-claim {
+  border: 1px solid rgba(233, 196, 106, 0.55);
+  background: rgba(233, 196, 106, 0.2);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.challenge-claim:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.challenge-claim:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.challenge-claim.done {
+  border-color: rgba(64, 196, 176, 0.45);
+  background: rgba(42, 157, 143, 0.25);
+  color: #9ff0e0;
+}
+
+.challenge-soft {
+  font-size: 0.68rem;
+  color: rgba(192, 132, 252, 0.85);
+  font-weight: 600;
 }
 
 /* Legacy side promo / external banners removed from layout */

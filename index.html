@@ -16,6 +16,7 @@
         <button type="button" id="btn-shop" class="hud-btn frame-btn" aria-label="Open shop">Shop</button>
         <button type="button" id="btn-remove-ads" class="hud-btn frame-btn frame-btn-remove" aria-label="Open remove ads">No Ads</button>
         <button type="button" id="btn-rank" class="hud-btn frame-btn frame-btn-rank" aria-label="Open ranks">★ Rank</button>
+        <button type="button" id="btn-challenges" class="hud-btn frame-btn frame-btn-challenges" aria-label="Open challenges">Challenges</button>
 
         <div id="currency-hud" aria-live="polite">
           <div id="coin-hud" title="Coin balance">
@@ -75,6 +76,25 @@
           <label for="player-name">Your name</label>
           <input id="player-name" type="text" maxlength="16" autocomplete="off" spellcheck="false" />
         </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Full page: Challenges -->
+  <div id="challenges-page" class="overlay page-overlay hidden" aria-hidden="true" role="dialog" aria-label="Challenges">
+    <div class="overlay-panel page-panel">
+      <header class="page-header">
+        <button type="button" id="challenges-back" class="btn-back" aria-label="Back to main">← Back</button>
+        <h2>Challenges</h2>
+        <span class="lb-badge">Local / this device</span>
+      </header>
+      <section class="challenges-body" aria-label="Daily and lifetime challenges">
+        <div class="lb-tabs challenge-tabs" role="tablist">
+          <button type="button" class="lb-tab challenge-tab active" data-challenge-tab="daily" role="tab" aria-selected="true">Daily</button>
+          <button type="button" class="lb-tab challenge-tab" data-challenge-tab="lifetime" role="tab" aria-selected="false">Lifetime</button>
+        </div>
+        <p id="challenges-period-label" class="lb-period"></p>
+        <div id="challenges-list" class="challenges-list" role="list"></div>
       </section>
     </div>
   </div>

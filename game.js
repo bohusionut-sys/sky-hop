@@ -33,6 +33,7 @@
   const EQUIPPED_MAP_KEY = "skyHopEquippedMap";
   const OWNED_TRAILS_KEY = "skyHopOwnedTrails";
   const EQUIPPED_TRAIL_KEY = "skyHopEquippedTrail";
+  const CHALLENGES_KEY = "skyHopChallenges";
 
   // Coins: 1 coin per this many pixels of horizontal travel
   const PIXELS_PER_COIN = 40;
@@ -51,6 +52,180 @@
     { id: "pack15", amount: 15, priceGbp: "1.99", label: "15 Stardust" },
     { id: "pack40", amount: 40, priceGbp: "4.99", label: "40 Stardust" },
   ];
+
+  /*
+   * Free Stardust budget (engaged player, challenges + pipe earn):
+   *   Target ≈ ~6 Stardust / day average → ~1 cheapest legendary (~25) every ~4 days.
+   *   Pipes: 1 / 25 cleared (~3–5/day if playing regularly).
+   *   Dailies: mostly coins; at most one hard daily may grant 1 Stardust (~0–1/day).
+   *   Lifetime: sparse 1–2 Stardust milestones that stretch past week one.
+   *   Paid packs remain the fast path for legendaries.
+   */
+  const DAILY_CHALLENGE_COUNT = 4;
+  const DAILY_CHALLENGE_POOL = [
+    {
+      id: "d_score_8",
+      kind: "daily",
+      type: "score_run",
+      title: "Sky Starter",
+      description: "Score at least 8 in a single run",
+      target: 8,
+      reward: { coins: 45 },
+    },
+    {
+      id: "d_score_15",
+      kind: "daily",
+      type: "score_run",
+      title: "Clean Passes",
+      description: "Score at least 15 in a single run",
+      target: 15,
+      reward: { coins: 80 },
+    },
+    {
+      id: "d_pipes_run_12",
+      kind: "daily",
+      type: "pipes_run",
+      title: "Pipe Rush",
+      description: "Clear 12 pipes in one run",
+      target: 12,
+      reward: { coins: 55 },
+    },
+    {
+      id: "d_coins_run_20",
+      kind: "daily",
+      type: "coins_run",
+      title: "Coin Hop",
+      description: "Earn 20 coins in a single run",
+      target: 20,
+      reward: { coins: 40 },
+    },
+    {
+      id: "d_distance_run_1600",
+      kind: "daily",
+      type: "distance_run",
+      title: "Long Glide",
+      description: "Travel 1,600 distance in one run",
+      target: 1600,
+      reward: { coins: 50 },
+    },
+    {
+      id: "d_runs_4",
+      kind: "daily",
+      type: "runs_day",
+      title: "Keep Hopping",
+      description: "Complete 4 runs today",
+      target: 4,
+      reward: { coins: 60 },
+    },
+    {
+      id: "d_pipes_day_25",
+      kind: "daily",
+      type: "pipes_day",
+      title: "Daily Clearance",
+      description: "Clear 25 pipes in total today",
+      target: 25,
+      reward: { coins: 70 },
+    },
+    {
+      id: "d_coins_day_40",
+      kind: "daily",
+      type: "coins_day",
+      title: "Pocket Change",
+      description: "Earn 40 coins from runs today",
+      target: 40,
+      reward: { coins: 35 },
+    },
+    {
+      // Harder daily — only SD daily in the pool (≈0–1 free SD from dailies)
+      id: "d_score_22",
+      kind: "daily",
+      type: "score_run",
+      title: "Star Flight",
+      description: "Score at least 22 in a single run",
+      target: 22,
+      reward: { coins: 40, stardust: 1 },
+    },
+  ];
+
+  const LIFETIME_CHALLENGES = [
+    {
+      id: "l_runs_15",
+      kind: "lifetime",
+      type: "runs_total",
+      title: "Warm-up Wings",
+      description: "Complete 15 runs",
+      target: 15,
+      reward: { coins: 100 },
+    },
+    {
+      id: "l_pipes_80",
+      kind: "lifetime",
+      type: "pipes_total",
+      title: "Pipe Apprentice",
+      description: "Clear 80 pipes in total",
+      target: 80,
+      reward: { coins: 120 },
+    },
+    {
+      id: "l_coins_200",
+      kind: "lifetime",
+      type: "coins_total",
+      title: "Coin Collector",
+      description: "Earn 200 coins from runs (lifetime)",
+      target: 200,
+      reward: { coins: 80 },
+    },
+    {
+      id: "l_score_20",
+      kind: "lifetime",
+      type: "score_run",
+      title: "High Flyer",
+      description: "Score at least 20 in a single run",
+      target: 20,
+      reward: { coins: 150 },
+    },
+    {
+      id: "l_runs_50",
+      kind: "lifetime",
+      type: "runs_total",
+      title: "Dedicated Hopper",
+      description: "Complete 50 runs",
+      target: 50,
+      reward: { coins: 200, stardust: 1 },
+    },
+    {
+      id: "l_pipes_400",
+      kind: "lifetime",
+      type: "pipes_total",
+      title: "Pillar Veteran",
+      description: "Clear 400 pipes in total",
+      target: 400,
+      reward: { coins: 180, stardust: 1 },
+    },
+    {
+      id: "l_score_45",
+      kind: "lifetime",
+      type: "score_run",
+      title: "Sky Legend",
+      description: "Score at least 45 in a single run",
+      target: 45,
+      reward: { coins: 250, stardust: 2 },
+    },
+    {
+      id: "l_legendary_soft",
+      kind: "lifetime",
+      type: "legendary_run",
+      title: "Wear the Crown",
+      description: "Score 8+ in one run with a legendary skin equipped",
+      target: 1,
+      reward: { coins: 120, stardust: 1 },
+      soft: true,
+    },
+  ];
+
+  const CHALLENGE_BY_ID = Object.fromEntries(
+    [...DAILY_CHALLENGE_POOL, ...LIFETIME_CHALLENGES].map((c) => [c.id, c])
+  );
 
   const NPC_NAMES = [
     "SkyPilot",
@@ -808,6 +983,281 @@
     refreshLeaderboardUI();
   }
 
+  // --- Challenges (local / device) ---
+  function hashStr(s) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function pickDailyIds(dayKey) {
+    const pool = DAILY_CHALLENGE_POOL.slice();
+    let h = hashStr("skyHopDaily|" + dayKey);
+    // Fisher–Yates with deterministic PRNG
+    for (let i = pool.length - 1; i > 0; i--) {
+      h = (Math.imul(h, 1103515245) + 12345) >>> 0;
+      const j = h % (i + 1);
+      const tmp = pool[i];
+      pool[i] = pool[j];
+      pool[j] = tmp;
+    }
+    return pool.slice(0, DAILY_CHALLENGE_COUNT).map((c) => c.id);
+  }
+
+  function emptyChallengeState(dayKey) {
+    return {
+      dayKey,
+      dailyIds: pickDailyIds(dayKey),
+      progress: {},
+      claimed: {},
+    };
+  }
+
+  function loadChallengeState() {
+    const dayKey = utcDayKey(new Date());
+    let raw = null;
+    try {
+      raw = JSON.parse(localStorage.getItem(CHALLENGES_KEY) || "null");
+    } catch (_) {
+      raw = null;
+    }
+    if (!raw || typeof raw !== "object") {
+      const fresh = emptyChallengeState(dayKey);
+      localStorage.setItem(CHALLENGES_KEY, JSON.stringify(fresh));
+      return fresh;
+    }
+    if (!raw.progress || typeof raw.progress !== "object") raw.progress = {};
+    if (!raw.claimed || typeof raw.claimed !== "object") raw.claimed = {};
+    if (raw.dayKey !== dayKey || !Array.isArray(raw.dailyIds) || raw.dailyIds.length === 0) {
+      // Roll a new daily set; keep lifetime progress + claimed
+      const next = emptyChallengeState(dayKey);
+      for (const c of LIFETIME_CHALLENGES) {
+        if (raw.progress[c.id] != null) next.progress[c.id] = raw.progress[c.id];
+        if (raw.claimed[c.id]) next.claimed[c.id] = true;
+      }
+      localStorage.setItem(CHALLENGES_KEY, JSON.stringify(next));
+      return next;
+    }
+    // Ensure daily ids still valid
+    const nextDaily = raw.dailyIds.filter((id) => CHALLENGE_BY_ID[id] && CHALLENGE_BY_ID[id].kind === "daily");
+    if (nextDaily.length !== DAILY_CHALLENGE_COUNT) {
+      raw.dailyIds = pickDailyIds(dayKey);
+      // Reset progress/claimed for dailies when set is repaired
+      for (const id of Object.keys(raw.progress)) {
+        if (CHALLENGE_BY_ID[id] && CHALLENGE_BY_ID[id].kind === "daily" && !raw.dailyIds.includes(id)) {
+          delete raw.progress[id];
+          delete raw.claimed[id];
+        }
+      }
+    } else {
+      raw.dailyIds = nextDaily;
+    }
+    localStorage.setItem(CHALLENGES_KEY, JSON.stringify(raw));
+    return raw;
+  }
+
+  let challengeState = loadChallengeState();
+  let activeChallengeTab = "daily";
+
+  function saveChallengeState() {
+    localStorage.setItem(CHALLENGES_KEY, JSON.stringify(challengeState));
+  }
+
+  function ensureChallengeDay() {
+    const dayKey = utcDayKey(new Date());
+    if (challengeState.dayKey !== dayKey) {
+      challengeState = loadChallengeState();
+    }
+  }
+
+  function getChallengeProgress(id) {
+    return Number(challengeState.progress[id] || 0);
+  }
+
+  function setChallengeProgress(id, value) {
+    const v = Math.max(0, Math.floor(value));
+    const prev = getChallengeProgress(id);
+    if (v > prev) {
+      challengeState.progress[id] = v;
+      return true;
+    }
+    return false;
+  }
+
+  function bumpChallengeProgress(id, amount) {
+    if (amount <= 0) return false;
+    const next = getChallengeProgress(id) + Math.floor(amount);
+    challengeState.progress[id] = next;
+    return true;
+  }
+
+  function maxChallengeProgress(id, value) {
+    return setChallengeProgress(id, Math.max(getChallengeProgress(id), value));
+  }
+
+  function isChallengeClaimed(id) {
+    return !!challengeState.claimed[id];
+  }
+
+  function applyRunToChallenge(def, run) {
+    const id = def.id;
+    switch (def.type) {
+      case "score_run":
+      case "pipes_run":
+        return maxChallengeProgress(id, run.score);
+      case "coins_run":
+        return maxChallengeProgress(id, run.coins);
+      case "distance_run":
+        return maxChallengeProgress(id, run.distance);
+      case "runs_day":
+      case "runs_total":
+        return bumpChallengeProgress(id, 1);
+      case "pipes_day":
+      case "pipes_total":
+        return bumpChallengeProgress(id, run.score);
+      case "coins_day":
+      case "coins_total":
+        return bumpChallengeProgress(id, run.coins);
+      case "legendary_run":
+        if (run.legendaryOk) return maxChallengeProgress(id, 1);
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  function updateChallengesOnRunEnd(runStats) {
+    ensureChallengeDay();
+    let changed = false;
+    const activeDaily = challengeState.dailyIds
+      .map((id) => CHALLENGE_BY_ID[id])
+      .filter(Boolean);
+    for (const def of activeDaily) {
+      if (applyRunToChallenge(def, runStats)) changed = true;
+    }
+    for (const def of LIFETIME_CHALLENGES) {
+      if (applyRunToChallenge(def, runStats)) changed = true;
+    }
+    if (changed) saveChallengeState();
+    if (challengesPage && !challengesPage.classList.contains("hidden")) {
+      renderChallengesList();
+    }
+  }
+
+  function formatChallengeReward(reward) {
+    const parts = [];
+    if (reward.coins) parts.push(`+${reward.coins} coins`);
+    if (reward.stardust) {
+      parts.push(`+${reward.stardust} ${SPECIAL_CURRENCY_NAME}`);
+    }
+    return parts.join(" · ") || "—";
+  }
+
+  function claimChallenge(id) {
+    ensureChallengeDay();
+    const def = CHALLENGE_BY_ID[id];
+    if (!def) return;
+    if (def.kind === "daily" && !challengeState.dailyIds.includes(id)) return;
+    if (isChallengeClaimed(id)) return;
+    const progress = getChallengeProgress(id);
+    if (progress < def.target) return;
+    challengeState.claimed[id] = true;
+    const reward = def.reward || {};
+    if (reward.coins) {
+      coins += reward.coins;
+      persistCoins();
+    }
+    if (reward.stardust) {
+      stardust += reward.stardust;
+      persistStardust();
+    }
+    if (!reward.coins && !reward.stardust) syncCoinHUD();
+    saveChallengeState();
+    renderChallengesList();
+  }
+
+  function challengesForTab(tab) {
+    ensureChallengeDay();
+    if (tab === "lifetime") return LIFETIME_CHALLENGES.slice();
+    return challengeState.dailyIds.map((id) => CHALLENGE_BY_ID[id]).filter(Boolean);
+  }
+
+  function renderChallengesList() {
+    if (!challengesListEl) return;
+    ensureChallengeDay();
+    if (challengesPeriodLabel) {
+      if (activeChallengeTab === "daily") {
+        challengesPeriodLabel.textContent = `Daily · ${challengeState.dayKey} (UTC) · resets at midnight UTC`;
+      } else {
+        challengesPeriodLabel.textContent = "Lifetime · progress saved on this device";
+      }
+    }
+    const list = challengesForTab(activeChallengeTab);
+    challengesListEl.innerHTML = "";
+    for (const def of list) {
+      const progress = Math.min(getChallengeProgress(def.id), def.target);
+      const pct = def.target > 0 ? Math.min(100, (progress / def.target) * 100) : 0;
+      const done = getChallengeProgress(def.id) >= def.target;
+      const claimed = isChallengeClaimed(def.id);
+      const card = document.createElement("article");
+      card.className = "challenge-card";
+      card.setAttribute("role", "listitem");
+      if (done) card.classList.add("complete");
+      if (claimed) card.classList.add("claimed");
+
+      const rewardHtml = formatChallengeReward(def.reward || {})
+        .replace(SPECIAL_CURRENCY_NAME, `<span class="sd">${SPECIAL_CURRENCY_NAME}</span>`);
+
+      const soft = def.soft
+        ? `<span class="challenge-soft">Optional · needs legendary skin</span>`
+        : "";
+
+      card.innerHTML =
+        `<div class="challenge-card-top">` +
+        `<div><h3 class="challenge-title"></h3><p class="challenge-desc"></p>${soft}</div>` +
+        `<div class="challenge-reward">${rewardHtml}</div>` +
+        `</div>` +
+        `<div class="challenge-progress-row">` +
+        `<div class="challenge-bar" aria-hidden="true"><span style="width:${pct}%"></span></div>` +
+        `<span class="challenge-frac">${progress} / ${def.target}</span>` +
+        `</div>` +
+        `<div class="challenge-actions"></div>`;
+
+      card.querySelector(".challenge-title").textContent = def.title;
+      card.querySelector(".challenge-desc").textContent = def.description;
+
+      const actions = card.querySelector(".challenge-actions");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "challenge-claim";
+      if (claimed) {
+        btn.textContent = "Completed";
+        btn.classList.add("done");
+        btn.disabled = true;
+      } else if (done) {
+        btn.textContent = "Claim";
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          claimChallenge(def.id);
+        });
+      } else {
+        btn.textContent = "In progress";
+        btn.disabled = true;
+      }
+      actions.appendChild(btn);
+      challengesListEl.appendChild(card);
+    }
+  }
+
+  function openChallengesPage() {
+    ensureChallengeDay();
+    renderChallengesList();
+    openPage(challengesPage);
+  }
+
   // --- DOM: leaderboard / promo / ads / shop ---
   const lbList = document.getElementById("lb-list");
   const lbPeriodLabel = document.getElementById("lb-period-label");
@@ -822,6 +1272,12 @@
   const rankPage = document.getElementById("rank-page");
   const removeAdsBack = document.getElementById("remove-ads-back");
   const rankBack = document.getElementById("rank-back");
+  const btnChallenges = document.getElementById("btn-challenges");
+  const challengesPage = document.getElementById("challenges-page");
+  const challengesBack = document.getElementById("challenges-back");
+  const challengesListEl = document.getElementById("challenges-list");
+  const challengesPeriodLabel = document.getElementById("challenges-period-label");
+  const challengeTabs = document.querySelectorAll(".challenge-tab");
   const coinBalanceEl = document.getElementById("coin-balance");
   const stardustBalanceEl = document.getElementById("stardust-balance") || document.getElementById("gems-balance");
   const shopCoinBalanceEl = document.getElementById("shop-coin-balance");
@@ -1202,6 +1658,31 @@
       if (e.target === rankPage) closePage(rankPage);
     });
   }
+  if (btnChallenges) {
+    btnChallenges.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openChallengesPage();
+    });
+  }
+  if (challengesBack) {
+    challengesBack.addEventListener("click", () => closePage(challengesPage));
+  }
+  if (challengesPage) {
+    challengesPage.addEventListener("click", (e) => {
+      if (e.target === challengesPage) closePage(challengesPage);
+    });
+  }
+  challengeTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      activeChallengeTab = tab.dataset.challengeTab || "daily";
+      challengeTabs.forEach((t) => {
+        const on = t === tab;
+        t.classList.toggle("active", on);
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      renderChallengesList();
+    });
+  });
 
   checkoutCancel.addEventListener("click", () => {
     pendingStardustPack = null;
@@ -1698,6 +2179,7 @@
     if (!shopModal.classList.contains("hidden")) return;
     if (removeAdsPage && !removeAdsPage.classList.contains("hidden")) return;
     if (rankPage && !rankPage.classList.contains("hidden")) return;
+    if (challengesPage && !challengesPage.classList.contains("hidden")) return;
     if (!checkoutModal.classList.contains("hidden")) return;
     if (state === STATE.OVER) {
       if (overTimer > 20) {
@@ -1739,6 +2221,9 @@
     }
     if (e.code === "Escape") {
       closeShop();
+      if (challengesPage) closePage(challengesPage);
+      if (rankPage) closePage(rankPage);
+      if (removeAdsPage) closePage(removeAdsPage);
     }
   }
 
@@ -1867,6 +2352,20 @@
     }
 
     updateLeaderboardsOnScore(score);
+
+    const equipped = getEquippedSkin();
+    const legendaryOk =
+      !!equipped &&
+      equipped.rarity === "legendary" &&
+      ownedSkins.includes(equipped.id) &&
+      score >= 8;
+    updateChallengesOnRunEnd({
+      score,
+      coins: coinsEarnedThisRun,
+      distance: Math.floor(runDistance),
+      legendaryOk,
+    });
+
     syncPromoVisibility();
   }
 
