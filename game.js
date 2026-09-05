@@ -17,7 +17,33 @@
   const GROUND_H = 96;
   const BIRD_X = 88;
   const BIRD_R = 14;
+
+  // Storage keys
   const BEST_KEY = "skyHopBest";
+  const COINS_KEY = "skyHopCoins";
+  const RUNS_KEY = "skyHopRunsSinceAd";
+  const ADS_REMOVED_KEY = "skyHopAdsRemoved";
+  const NAME_KEY = "skyHopPlayerName";
+  const LB_PREFIX = "skyHopLB_";
+
+  // Coins: 1 coin per this many pixels of horizontal travel
+  const PIXELS_PER_COIN = 40;
+  const AD_EVERY_N_RUNS = 3;
+  const AD_COUNTDOWN_SEC = 5;
+  const LB_MAX = 8;
+
+  const NPC_NAMES = [
+    "SkyPilot",
+    "Nimbus",
+    "CoralWing",
+    "TealDart",
+    "Hopster",
+    "CloudKit",
+    "Gale",
+    "Zephyr",
+    "Pip",
+    "Aero",
+  ];
 
   // --- State ---
   const STATE = { READY: 0, PLAYING: 1, OVER: 2 };
@@ -27,6 +53,15 @@
   let frames = 0;
   let pipeSpeed = PIPE_SPEED_BASE;
   let pipeGap = PIPE_GAP_BASE;
+
+  let coins = Number(localStorage.getItem(COINS_KEY) || 0) || 0;
+  let runDistance = 0;
+  let coinsEarnedThisRun = 0;
+  let runsSinceAd = Number(localStorage.getItem(RUNS_KEY) || 0) || 0;
+  let adsRemoved = localStorage.getItem(ADS_REMOVED_KEY) === "1";
+  let playerName = (localStorage.getItem(NAME_KEY) || "You").slice(0, 16);
+  let pendingStartAfterAd = false;
+  let adBlocking = false;
 
   const bird = {
     x: BIRD_X,
@@ -66,7 +101,281 @@
     hudShadow: "rgba(0,0,0,0.35)",
     panel: "rgba(15, 23, 42, 0.72)",
     accent: "#e9c46a",
+    coin: "#f4d35e",
   };
+
+  // --- Period helpers (UTC) ---
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function utcDayKey(d) {
+    return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+  }
+
+  function utcMonthKey(d) {
+    return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}`;
+  }
+
+  /** ISO week key: YYYY-Www (UTC) */
+  function utcIsoWeekKey(d) {
+    const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    // Thursday in current week decides the year
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+    return `${date.getUTCFullYear()}-W${pad2(weekNo)}`;
+  }
+
+  function periodKey(kind) {
+    const now = new Date();
+    if (kind === "daily") return utcDayKey(now);
+    if (kind === "weekly") return utcIsoWeekKey(now);
+    return utcMonthKey(now);
+  }
+
+  function periodLabel(kind, key) {
+    if (kind === "daily") return `Day ${key} (UTC)`;
+    if (kind === "weekly") return `Week ${key} (UTC)`;
+    return `Month ${key} (UTC)`;
+  }
+
+  function seedNpc(kind) {
+    const key = periodKey(kind);
+    // Deterministic-ish variety from period string
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    const count = 4 + (hash % 3);
+    const entries = [];
+    const used = new Set();
+    for (let i = 0; i < count; i++) {
+      let ni = (hash + i * 17) % NPC_NAMES.length;
+      while (used.has(ni)) ni = (ni + 1) % NPC_NAMES.length;
+      used.add(ni);
+      const base = kind === "daily" ? 4 : kind === "weekly" ? 10 : 18;
+      const scoreVal = base + ((hash >> (i * 3)) % 25) + i * 2;
+      entries.push({ name: NPC_NAMES[ni], score: scoreVal, isYou: false });
+    }
+    entries.sort((a, b) => b.score - a.score);
+    return entries.slice(0, LB_MAX);
+  }
+
+  function loadBoard(kind) {
+    const key = periodKey(kind);
+    const storageKey = LB_PREFIX + kind;
+    let raw = null;
+    try {
+      raw = JSON.parse(localStorage.getItem(storageKey) || "null");
+    } catch (_) {
+      raw = null;
+    }
+    if (!raw || raw.periodKey !== key || !Array.isArray(raw.entries)) {
+      const entries = seedNpc(kind);
+      const data = { periodKey: key, entries };
+      localStorage.setItem(storageKey, JSON.stringify(data));
+      return data;
+    }
+    return raw;
+  }
+
+  function saveBoard(kind, data) {
+    localStorage.setItem(LB_PREFIX + kind, JSON.stringify(data));
+  }
+
+  function upsertPlayerScore(kind, playerScore) {
+    const data = loadBoard(kind);
+    const entries = data.entries.filter((e) => !e.isYou);
+    entries.push({ name: playerName || "You", score: playerScore, isYou: true });
+    entries.sort((a, b) => b.score - a.score || (a.isYou ? -1 : 1));
+    data.entries = entries.slice(0, LB_MAX);
+    // Keep player on board even if below cut if they had a best — already sliced
+    // If player was cut, ensure their best still shows if it's top-worthy; otherwise drop
+    const stillYou = data.entries.some((e) => e.isYou);
+    if (!stillYou && playerScore > 0) {
+      // Replace lowest if better
+      const last = data.entries[data.entries.length - 1];
+      if (!last || playerScore >= last.score) {
+        data.entries[data.entries.length - 1] = {
+          name: playerName || "You",
+          score: playerScore,
+          isYou: true,
+        };
+        data.entries.sort((a, b) => b.score - a.score || (a.isYou ? -1 : 1));
+      }
+    }
+    saveBoard(kind, data);
+    return data;
+  }
+
+  function updateLeaderboardsOnScore(finalScore) {
+    if (finalScore <= 0) {
+      refreshLeaderboardUI();
+      return;
+    }
+    for (const kind of ["daily", "weekly", "monthly"]) {
+      const data = loadBoard(kind);
+      const you = data.entries.find((e) => e.isYou);
+      const prev = you ? you.score : 0;
+      if (finalScore > prev) {
+        upsertPlayerScore(kind, finalScore);
+      }
+    }
+    refreshLeaderboardUI();
+  }
+
+  // --- DOM: leaderboard / promo / ads ---
+  const lbList = document.getElementById("lb-list");
+  const lbPeriodLabel = document.getElementById("lb-period-label");
+  const lbTabs = document.querySelectorAll(".lb-tab");
+  const nameInput = document.getElementById("player-name");
+  const promoOffer = document.getElementById("promo-offer");
+  const promoThanks = document.getElementById("promo-thanks");
+  const btnBuyAds = document.getElementById("btn-buy-ads");
+  const adOverlay = document.getElementById("ad-overlay");
+  const adCountdown = document.getElementById("ad-countdown");
+  const adContinue = document.getElementById("ad-continue");
+  const checkoutModal = document.getElementById("checkout-modal");
+  const checkoutCancel = document.getElementById("checkout-cancel");
+  const checkoutConfirm = document.getElementById("checkout-confirm");
+
+  let activePeriod = "daily";
+
+  function refreshLeaderboardUI() {
+    // Rollover check happens in loadBoard
+    const data = loadBoard(activePeriod);
+    lbPeriodLabel.textContent = periodLabel(activePeriod, data.periodKey);
+    lbList.innerHTML = "";
+    data.entries.forEach((e, i) => {
+      const li = document.createElement("li");
+      if (e.isYou) li.classList.add("you");
+      li.innerHTML =
+        `<span class="lb-rank">${i + 1}</span>` +
+        `<span class="lb-name"></span>` +
+        `<span class="lb-score">${e.score}</span>`;
+      li.querySelector(".lb-name").textContent = e.name;
+      lbList.appendChild(li);
+    });
+  }
+
+  function syncPromoUI() {
+    if (adsRemoved) {
+      promoOffer.classList.add("hidden");
+      promoThanks.classList.remove("hidden");
+    } else {
+      promoOffer.classList.remove("hidden");
+      promoThanks.classList.add("hidden");
+    }
+  }
+
+  function persistCoins() {
+    localStorage.setItem(COINS_KEY, String(coins));
+  }
+
+  function persistRuns() {
+    localStorage.setItem(RUNS_KEY, String(runsSinceAd));
+  }
+
+  function persistAdsRemoved() {
+    localStorage.setItem(ADS_REMOVED_KEY, adsRemoved ? "1" : "0");
+  }
+
+  nameInput.value = playerName;
+  nameInput.addEventListener("change", () => {
+    playerName = (nameInput.value.trim() || "You").slice(0, 16);
+    nameInput.value = playerName;
+    localStorage.setItem(NAME_KEY, playerName);
+    // Rename "you" entries on all boards for current periods
+    for (const kind of ["daily", "weekly", "monthly"]) {
+      const data = loadBoard(kind);
+      let changed = false;
+      for (const e of data.entries) {
+        if (e.isYou) {
+          e.name = playerName;
+          changed = true;
+        }
+      }
+      if (changed) saveBoard(kind, data);
+    }
+    refreshLeaderboardUI();
+  });
+
+  lbTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      activePeriod = tab.dataset.period;
+      lbTabs.forEach((t) => {
+        const on = t === tab;
+        t.classList.toggle("active", on);
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      refreshLeaderboardUI();
+    });
+  });
+
+  btnBuyAds.addEventListener("click", () => {
+    if (adsRemoved) return;
+    checkoutModal.classList.remove("hidden");
+    checkoutModal.setAttribute("aria-hidden", "false");
+  });
+
+  checkoutCancel.addEventListener("click", () => {
+    checkoutModal.classList.add("hidden");
+    checkoutModal.setAttribute("aria-hidden", "true");
+  });
+
+  checkoutConfirm.addEventListener("click", () => {
+    adsRemoved = true;
+    persistAdsRemoved();
+    runsSinceAd = 0;
+    persistRuns();
+    checkoutModal.classList.add("hidden");
+    checkoutModal.setAttribute("aria-hidden", "true");
+    syncPromoUI();
+  });
+
+  function showAdThen(callback) {
+    adBlocking = true;
+    pendingStartAfterAd = true;
+    adOverlay.classList.remove("hidden");
+    adOverlay.setAttribute("aria-hidden", "false");
+    adContinue.disabled = true;
+    let left = AD_COUNTDOWN_SEC;
+    adCountdown.textContent = `Continue in ${left}…`;
+    const tick = setInterval(() => {
+      left--;
+      if (left > 0) {
+        adCountdown.textContent = `Continue in ${left}…`;
+      } else {
+        clearInterval(tick);
+        adCountdown.textContent = "Ready";
+        adContinue.disabled = false;
+      }
+    }, 1000);
+
+    const onContinue = () => {
+      adContinue.removeEventListener("click", onContinue);
+      clearInterval(tick);
+      adOverlay.classList.add("hidden");
+      adOverlay.setAttribute("aria-hidden", "true");
+      adBlocking = false;
+      runsSinceAd = 0;
+      persistRuns();
+      pendingStartAfterAd = false;
+      if (typeof callback === "function") callback();
+    };
+    adContinue.addEventListener("click", onContinue);
+  }
+
+  function needsAdGate() {
+    return !adsRemoved && runsSinceAd >= AD_EVERY_N_RUNS;
+  }
+
+  // Ensure boards exist / rollover on load
+  loadBoard("daily");
+  loadBoard("weekly");
+  loadBoard("monthly");
+  refreshLeaderboardUI();
+  syncPromoUI();
 
   function resetGame() {
     state = STATE.READY;
@@ -74,6 +383,8 @@
     frames = 0;
     pipeSpeed = PIPE_SPEED_BASE;
     pipeGap = PIPE_GAP_BASE;
+    runDistance = 0;
+    coinsEarnedThisRun = 0;
     bird.x = BIRD_X;
     bird.y = H / 2 - 20;
     bird.vy = 0;
@@ -102,15 +413,41 @@
     });
   }
 
-  function flap() {
-    if (state === STATE.OVER) {
-      if (overTimer > 20) resetGame();
+  function tryStartPlay() {
+    if (adBlocking) return;
+    if (needsAdGate()) {
+      showAdThen(() => {
+        if (state === STATE.READY) {
+          state = STATE.PLAYING;
+          bird.vy = FLAP;
+          bird.wing = 8;
+        }
+      });
       return;
     }
-    if (state === STATE.READY) state = STATE.PLAYING;
+    state = STATE.PLAYING;
+  }
+
+  function flap() {
+    if (adBlocking) return;
+    if (state === STATE.OVER) {
+      if (overTimer > 20) {
+        if (needsAdGate()) {
+          showAdThen(() => {
+            resetGame();
+          });
+        } else {
+          resetGame();
+        }
+      }
+      return;
+    }
+    if (state === STATE.READY) {
+      tryStartPlay();
+      if (state !== STATE.PLAYING) return;
+    }
     bird.vy = FLAP;
     bird.wing = 8;
-    // flap particles
     for (let i = 0; i < 6; i++) {
       particles.push({
         x: bird.x - 6,
@@ -150,7 +487,6 @@
 
     if (flash > 0) flash--;
 
-    // idle bob in ready
     if (state === STATE.READY) {
       bird.y = H / 2 - 20 + Math.sin(frames * 0.08) * 8;
       bird.rot = Math.sin(frames * 0.08) * 0.12;
@@ -174,9 +510,11 @@
     const targetRot = bird.vy < 0 ? -0.45 : Math.min(1.1, bird.vy * 0.09);
     bird.rot += (targetRot - bird.rot) * 0.25;
 
-    // difficulty ramp
     pipeSpeed = PIPE_SPEED_BASE + Math.min(1.6, score * 0.04);
     pipeGap = Math.max(100, PIPE_GAP_BASE - Math.min(28, score * 0.6));
+
+    // Distance traveled (horizontal scroll pixels)
+    runDistance += pipeSpeed;
 
     for (const p of pipes) {
       p.x -= pipeSpeed;
@@ -190,14 +528,12 @@
       }
     }
 
-    // recycle pipes
     while (pipes.length && pipes[0].x + PIPE_WIDTH < -10) {
       pipes.shift();
       const lastX = pipes[pipes.length - 1].x;
       spawnPipe(lastX + PIPE_SPACING);
     }
 
-    // collisions
     const floor = H - GROUND_H - BIRD_R + 2;
     if (bird.y + BIRD_R >= floor || bird.y - BIRD_R <= 0) {
       die();
@@ -230,6 +566,19 @@
     flash = 8;
     overTimer = 0;
     bird.vy = Math.min(bird.vy, 2);
+
+    coinsEarnedThisRun = Math.floor(runDistance / PIXELS_PER_COIN);
+    if (coinsEarnedThisRun > 0) {
+      coins += coinsEarnedThisRun;
+      persistCoins();
+    }
+
+    if (!adsRemoved) {
+      runsSinceAd += 1;
+      persistRuns();
+    }
+
+    updateLeaderboardsOnScore(score);
   }
 
   function updateParticles() {
@@ -264,7 +613,6 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
-    // soft sun
     ctx.beginPath();
     ctx.arc(W - 70, 70, 36, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(255, 236, 179, 0.85)";
@@ -274,7 +622,6 @@
     ctx.fillStyle = "rgba(255, 220, 140, 0.2)";
     ctx.fill();
 
-    // clouds
     drawCloud(40 - skyOffset * 0.6, 90, 1.1);
     drawCloud(180 - skyOffset * 0.45, 140, 0.85);
     drawCloud(300 - skyOffset * 0.55, 70, 1.0);
@@ -327,15 +674,12 @@
     const gapBot = p.top + p.gap;
     const floorY = H - GROUND_H;
 
-    // top pipe (from top down to gapTop)
     drawPipeSegment(p.x, 0, PIPE_WIDTH, gapTop, true);
-    // bottom pipe
     drawPipeSegment(p.x, gapBot, PIPE_WIDTH, floorY - gapBot, false);
   }
 
   function drawPipeSegment(x, y, w, h, isTop) {
     if (h <= 0) return;
-    // body
     const bodyG = ctx.createLinearGradient(x, 0, x + w, 0);
     bodyG.addColorStop(0, C.pipeDark);
     bodyG.addColorStop(0.25, C.pipeHighlight);
@@ -344,7 +688,6 @@
     ctx.fillStyle = bodyG;
     ctx.fillRect(x + 4, y, w - 8, h);
 
-    // rim (cap)
     const rimH = 22;
     const rimExpand = 6;
     const rimY = isTop ? y + h - rimH : y;
@@ -361,13 +704,11 @@
     roundRect(x - rimExpand, rimY, w + rimExpand * 2, rimH, 4);
     ctx.fill();
 
-    // gold band on rim
     ctx.fillStyle = C.pipeRim;
     ctx.fillRect(x - rimExpand + 2, rimY + 4, w + rimExpand * 2 - 4, 4);
     ctx.fillStyle = "rgba(255,255,255,0.25)";
     ctx.fillRect(x - rimExpand + 2, rimY + 4, w + rimExpand * 2 - 4, 1.5);
 
-    // subtle edge lines on body
     ctx.strokeStyle = "rgba(0,0,0,0.15)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -388,17 +729,14 @@
 
   function drawGround() {
     const y = H - GROUND_H;
-    // dirt
     ctx.fillStyle = C.dirt;
     ctx.fillRect(0, y + 22, W, GROUND_H - 22);
-    // grass strip
     const gg = ctx.createLinearGradient(0, y, 0, y + 28);
     gg.addColorStop(0, "#5cb87a");
     gg.addColorStop(1, C.groundDark);
     ctx.fillStyle = gg;
     ctx.fillRect(0, y, W, 28);
 
-    // scrolling grass tufts
     ctx.fillStyle = C.ground;
     for (let x = -groundOffset; x < W + 48; x += 24) {
       ctx.beginPath();
@@ -408,7 +746,6 @@
       ctx.fill();
     }
 
-    // dirt speckles
     ctx.fillStyle = C.dirtDark;
     for (let x = -groundOffset * 0.5; x < W + 40; x += 40) {
       ctx.fillRect(x + 6, y + 40, 6, 4);
@@ -416,7 +753,6 @@
       ctx.fillRect(x + 10, y + 72, 5, 4);
     }
 
-    // top edge line
     ctx.fillStyle = "rgba(255,255,255,0.25)";
     ctx.fillRect(0, y, W, 2);
   }
@@ -426,25 +762,21 @@
     ctx.translate(bird.x, bird.y);
     ctx.rotate(bird.rot);
 
-    // soft shadow
     ctx.fillStyle = "rgba(0,0,0,0.18)";
     ctx.beginPath();
     ctx.ellipse(2, BIRD_R + 4, BIRD_R * 0.9, 4, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // body
     ctx.fillStyle = C.birdBody;
     ctx.beginPath();
     ctx.ellipse(0, 0, BIRD_R + 2, BIRD_R, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // belly
     ctx.fillStyle = C.birdBelly;
     ctx.beginPath();
     ctx.ellipse(2, 4, BIRD_R * 0.7, BIRD_R * 0.65, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // crest
     ctx.fillStyle = C.birdCrest;
     ctx.beginPath();
     ctx.moveTo(-4, -BIRD_R + 2);
@@ -452,7 +784,6 @@
     ctx.quadraticCurveTo(2, -BIRD_R - 4, -2, -BIRD_R + 4);
     ctx.fill();
 
-    // wing
     const wingAngle = bird.wing > 0 ? -0.7 : 0.35 + Math.sin(frames * 0.35) * 0.08;
     ctx.save();
     ctx.translate(-2, 2);
@@ -467,12 +798,10 @@
     ctx.fill();
     ctx.restore();
 
-    // eye white
     ctx.fillStyle = "#fff";
     ctx.beginPath();
     ctx.ellipse(8, -4, 5.5, 5.5, 0, 0, Math.PI * 2);
     ctx.fill();
-    // pupil
     ctx.fillStyle = C.birdEye;
     ctx.beginPath();
     ctx.arc(10, -4, 2.6, 0, Math.PI * 2);
@@ -482,7 +811,6 @@
     ctx.arc(11, -5.2, 1, 0, Math.PI * 2);
     ctx.fill();
 
-    // beak
     ctx.fillStyle = C.birdBeak;
     ctx.beginPath();
     ctx.moveTo(12, 0);
@@ -497,7 +825,6 @@
     ctx.lineTo(20, 2.5);
     ctx.stroke();
 
-    // cheek blush
     ctx.fillStyle = "rgba(255, 150, 140, 0.45)";
     ctx.beginPath();
     ctx.ellipse(4, 2, 3, 2, 0, 0, Math.PI * 2);
@@ -518,8 +845,30 @@
     ctx.globalAlpha = 1;
   }
 
+  function drawCoinIcon(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = C.coin;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.25)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.beginPath();
+    ctx.arc(x - r * 0.25, y - r * 0.25, r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   function drawHUD() {
-    // score during play
+    // Coin balance (always)
+    ctx.textAlign = "left";
+    ctx.font = "bold 16px Segoe UI, system-ui, sans-serif";
+    drawCoinIcon(18, 22, 8);
+    ctx.fillStyle = C.hudShadow;
+    ctx.fillText(String(coins), 32 + 1, 27 + 1);
+    ctx.fillStyle = C.coin;
+    ctx.fillText(String(coins), 32, 27);
+
     if (state === STATE.PLAYING || state === STATE.OVER) {
       ctx.textAlign = "center";
       ctx.font = "bold 42px Segoe UI, system-ui, sans-serif";
@@ -530,7 +879,6 @@
     }
 
     if (state === STATE.READY) {
-      // title
       ctx.textAlign = "center";
       ctx.font = "bold 44px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = C.hudShadow;
@@ -541,7 +889,6 @@
       ctx.fillStyle = "rgba(255,255,255,0.9)";
       ctx.fillText("Tap · Click · Space · ↑", W / 2, 158);
 
-      // panel
       const pw = 220;
       const ph = 70;
       const px = (W - pw) / 2;
@@ -564,9 +911,9 @@
 
     if (state === STATE.OVER) {
       const pw = 240;
-      const ph = 160;
+      const ph = 188;
       const px = (W - pw) / 2;
-      const py = H * 0.32;
+      const py = H * 0.30;
       ctx.fillStyle = C.panel;
       roundRect(px, py, pw, ph, 14);
       ctx.fill();
@@ -578,19 +925,25 @@
       ctx.textAlign = "center";
       ctx.font = "bold 28px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = C.accent;
-      ctx.fillText("Game Over", W / 2, py + 38);
+      ctx.fillText("Game Over", W / 2, py + 36);
 
       ctx.font = "16px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillText(`Score  ${score}`, W / 2, py + 72);
-      ctx.fillText(`Best   ${best}`, W / 2, py + 96);
+      ctx.fillText(`Score  ${score}`, W / 2, py + 68);
+      ctx.fillText(`Best   ${best}`, W / 2, py + 90);
+
+      ctx.fillStyle = C.coin;
+      ctx.fillText(`Coins +${coinsEarnedThisRun}`, W / 2, py + 116);
+      ctx.font = "13px Segoe UI, system-ui, sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillText(`Balance ${coins}`, W / 2, py + 136);
 
       if (overTimer > 20) {
         const pulse = 0.7 + Math.sin(frames * 0.12) * 0.3;
         ctx.globalAlpha = pulse;
         ctx.font = "600 15px Segoe UI, system-ui, sans-serif";
         ctx.fillStyle = "#fff";
-        ctx.fillText("Tap to retry", W / 2, py + 132);
+        ctx.fillText("Tap to retry", W / 2, py + 164);
         ctx.globalAlpha = 1;
       }
     }
@@ -603,14 +956,12 @@
   function loop(ts) {
     if (!last) last = ts;
     let dt = ts - last;
-    // catch up at ~60fps steps without spiral
     if (dt > 100) dt = STEP;
     while (dt >= STEP) {
       update();
       dt -= STEP;
       last += STEP;
     }
-    // if we fell behind, resync
     if (ts - last > STEP * 3) last = ts;
     draw();
     requestAnimationFrame(loop);

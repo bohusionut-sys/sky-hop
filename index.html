@@ -8,9 +8,74 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="wrap">
-    <canvas id="game" width="360" height="640" aria-label="Sky Hop game canvas"></canvas>
+  <div id="app">
+    <div id="main-col">
+      <div id="wrap">
+        <canvas id="game" width="360" height="640" aria-label="Sky Hop game canvas"></canvas>
+      </div>
+
+      <section id="leaderboard" aria-label="Local device leaderboards">
+        <header class="lb-header">
+          <h2>Leaderboard</h2>
+          <span class="lb-badge">Local / this device</span>
+        </header>
+        <div class="lb-tabs" role="tablist">
+          <button type="button" class="lb-tab active" data-period="daily" role="tab" aria-selected="true">Daily</button>
+          <button type="button" class="lb-tab" data-period="weekly" role="tab" aria-selected="false">Weekly</button>
+          <button type="button" class="lb-tab" data-period="monthly" role="tab" aria-selected="false">Monthly</button>
+        </div>
+        <p id="lb-period-label" class="lb-period"></p>
+        <ol id="lb-list" class="lb-list"></ol>
+        <div class="lb-name-row">
+          <label for="player-name">Your name</label>
+          <input id="player-name" type="text" maxlength="16" autocomplete="off" spellcheck="false" />
+        </div>
+      </section>
+    </div>
+
+    <aside id="promo" aria-label="Remove ads offer">
+      <div id="promo-offer" class="promo-card">
+        <p class="promo-kicker">Support Sky Hop</p>
+        <h2>Remove ads</h2>
+        <p class="promo-price">£1.99 <span>GBP</span></p>
+        <p class="promo-desc">Skip the interstitial every 3 runs. One-time simulated purchase on this device.</p>
+        <button type="button" id="btn-buy-ads" class="promo-btn">Buy · Remove ads</button>
+      </div>
+      <div id="promo-thanks" class="promo-card promo-thanks hidden">
+        <p class="promo-kicker">Thank you</p>
+        <h2>Ads removed</h2>
+        <p class="promo-desc">You’re all set — no more ad gates on this device.</p>
+      </div>
+    </aside>
   </div>
+
+  <!-- Simulated interstitial ad -->
+  <div id="ad-overlay" class="overlay hidden" aria-hidden="true">
+    <div class="overlay-panel ad-panel">
+      <p class="ad-label">Advertisement</p>
+      <div class="ad-placeholder">
+        <span>Sky Hop · Simulated Ad</span>
+        <p>Thanks for supporting free play.</p>
+      </div>
+      <p id="ad-countdown" class="ad-countdown">Continue in 5…</p>
+      <button type="button" id="ad-continue" class="promo-btn" disabled>Continue</button>
+    </div>
+  </div>
+
+  <!-- Simulated checkout -->
+  <div id="checkout-modal" class="overlay hidden" aria-hidden="true">
+    <div class="overlay-panel checkout-panel">
+      <h2>Checkout</h2>
+      <p class="checkout-item">Remove ads — Sky Hop</p>
+      <p class="checkout-price">£1.99 GBP</p>
+      <p class="checkout-note">Simulated purchase only. No real payment is processed.</p>
+      <div class="checkout-actions">
+        <button type="button" id="checkout-cancel" class="btn-ghost">Cancel</button>
+        <button type="button" id="checkout-confirm" class="promo-btn">Confirm £1.99</button>
+      </div>
+    </div>
+  </div>
+
   <script src="game.js"></script>
 </body>
 </html>

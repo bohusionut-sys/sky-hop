@@ -28,8 +28,15 @@ No build step, no dependencies, no CDN assets.
 - Hit a pillar, the ceiling, or the ground → game over
 - Best score is saved in `localStorage` (`skyHopBest`)
 
+## Features
+
+- **Coins** — earned from distance traveled each run (`skyHopCoins`); shown in HUD and on game over
+- **Local leaderboards** — Daily / Weekly / Monthly tabs on this device; period keys roll over in UTC and reseed NPC scores so boards stay fresh
+- **Ads (simulated)** — after every 3 completed runs, a short interstitial must be watched before the next play (skipped if ads removed)
+- **Remove ads** — side promo (£1.99 GBP simulated checkout) sets `skyHopAdsRemoved` on this device
+
 ## Files
 
-- `index.html` — page shell
-- `style.css` — layout / canvas framing
-- `game.js` — game loop, physics, drawing
+- `index.html` — page shell, leaderboard, promo, overlays
+- `style.css` — responsive layout (game + side promo)
+- `game.js` — game loop, physics, drawing, persistence
