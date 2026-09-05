@@ -673,38 +673,40 @@
   const MUSIC_VIBES = {
     // All tracks are arcade/chiptune-flavored; style still tints motif + drums
     coral: { style: "arcade", bpm: 150, root: 196, wave: "square", brightness: 0.75 },
-    neon: { style: "arcade", bpm: 160, root: 147, wave: "square", brightness: 0.8 },
+    neon: { style: "arcadeAttack", bpm: 172, root: 147, wave: "square", brightness: 0.88 },
     bone: { style: "arcadeDark", bpm: 140, root: 110, wave: "square", brightness: 0.65 },
-    infernal: { style: "arcadeDark", bpm: 155, root: 98, wave: "square", brightness: 0.7 },
-    void: { style: "arcadeDark", bpm: 145, root: 82, wave: "square", brightness: 0.68 },
-    mohawk: { style: "arcadePunk", bpm: 170, root: 123, wave: "square", brightness: 0.82 },
+    infernal: { style: "arcadeAttack", bpm: 175, root: 98, wave: "square", brightness: 0.88 },
+    void: { style: "arcadeAttack", bpm: 168, root: 82, wave: "square", brightness: 0.86 },
+    mohawk: { style: "arcadeAttack", bpm: 180, root: 123, wave: "square", brightness: 0.9 },
     vampire: { style: "arcadeDark", bpm: 138, root: 87, wave: "square", brightness: 0.62 },
     chrome: { style: "arcade", bpm: 158, root: 165, wave: "square", brightness: 0.78 },
-    hotsauce: { style: "arcadePunk", bpm: 165, root: 131, wave: "square", brightness: 0.8 },
-    assassin: { style: "arcadeDark", bpm: 148, root: 110, wave: "square", brightness: 0.66 },
+    hotsauce: { style: "arcadeAttack", bpm: 178, root: 131, wave: "square", brightness: 0.88 },
+    assassin: { style: "arcadeAttack", bpm: 170, root: 110, wave: "square", brightness: 0.84 },
     slime: { style: "arcade", bpm: 152, root: 123, wave: "square", brightness: 0.74 },
     golden: { style: "arcadeBoss", bpm: 142, root: 175, wave: "square", brightness: 0.85 },
     ice: { style: "arcade", bpm: 156, root: 196, wave: "square", brightness: 0.76 },
     pixel: { style: "arcade", bpm: 168, root: 220, wave: "square", brightness: 0.84 },
     cosmic: { style: "arcadeBoss", bpm: 136, root: 147, wave: "square", brightness: 0.72 },
-    lava: { style: "arcadePunk", bpm: 160, root: 98, wave: "square", brightness: 0.78 },
+    lava: { style: "arcadeAttack", bpm: 176, root: 98, wave: "square", brightness: 0.87 },
     ghost: { style: "arcadeDark", bpm: 132, root: 131, wave: "square", brightness: 0.6 },
     eel: { style: "arcade", bpm: 162, root: 185, wave: "square", brightness: 0.8 },
     candy: { style: "arcade", bpm: 172, root: 233, wave: "square", brightness: 0.86 },
-    obsidian: { style: "arcadeBoss", bpm: 134, root: 87, wave: "square", brightness: 0.7 },
+    obsidian: { style: "arcadeAttack", bpm: 164, root: 87, wave: "square", brightness: 0.9 },
   };
 
   const MUSIC = SKINS.map((s) => {
     const vibe = MUSIC_VIBES[s.id] || MUSIC_VIBES.coral;
+    const attack = vibe.style === "arcadeAttack";
     return {
       id: s.id,
-      name: s.name,
+      name: attack ? s.name + " · Attack" : s.name,
       price: s.price,
       rarity: s.rarity,
       currency: s.currency,
       color: s.trailColor,
       accent: s.trailAccent,
       vibe,
+      attackMode: attack,
     };
   });
   const MUSIC_BY_ID = Object.fromEntries(MUSIC.map((m) => [m.id, m]));
@@ -1034,7 +1036,7 @@
     if (style === "arcade" || style === "arcadeBoss" || style === "chip" || style === "playful" || style === "robot") {
       return MUSIC_SCALES.chip;
     }
-    if (style === "arcadePunk" || style === "synth" || style === "spicy" || style === "riot") {
+    if (style === "arcadeAttack" || style === "arcadePunk" || style === "synth" || style === "spicy" || style === "riot") {
       return MUSIC_SCALES.pent;
     }
     if (style === "arcadeDark" || style === "noir" || style === "glitch") {
@@ -1152,6 +1154,7 @@
       arcadePunk: [0, 0, 3, 5, 0, 3, 7, 5, 0, 5, 7, 10, 7, 5, 3, 0],
       arcadeDark: [0, 1, 3, 5, 3, 1, 0, 5, 7, 5, 3, 1, 0, 3, 5, 7],
       arcadeBoss: [0, 4, 7, 12, 7, 4, 0, 7, 5, 9, 12, 9, 7, 5, 4, 0],
+      arcadeAttack: [0, 0, 5, 7, 10, 7, 5, 3, 0, 5, 10, 12, 10, 7, 5, 0],
       tropical: [0, 2, 4, 2, 5, 4, 2, 0, 0, 2, 4, 5, 4, 2, 0, -1],
       synth: [0, 0, 3, 4, 7, 4, 3, 0, 5, 4, 3, 2, 0, 2, 4, 7],
       hollow: [0, -1, 3, -1, 5, -1, 3, -1, 0, -1, 2, -1, 5, -1, 7, -1],
@@ -1178,6 +1181,7 @@
       arcadePunk: [0, 0, -1, 0, 3, 3, -1, 3, 5, 5, -1, 5, 0, 0, -1, 0],
       arcadeDark: [0, -1, -1, 0, 5, -1, -1, 5, 0, -1, 3, -1, 5, -1, 0, -1],
       arcadeBoss: [0, -1, 0, -1, 7, -1, 0, -1, 5, -1, 0, -1, 7, -1, 5, -1],
+      arcadeAttack: [0, 0, 0, -1, 5, 5, 0, -1, 7, 7, 0, -1, 5, 0, 10, -1],
       tropical: [0, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1, 7, -1, 5, -1],
       synth: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 3, -1, 5, -1, 0, -1],
       default: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
@@ -1211,6 +1215,7 @@
         style === "arcade" ||
         style === "arcadePunk" ||
         style === "arcadeBoss" ||
+        style === "arcadeAttack" ||
         style === "riot" ||
         style === "synth" ||
         style === "spicy" ||
@@ -1388,10 +1393,11 @@
       if (pattern.lead[i] >= 0) {
         const f = musicNoteFreq(root, pattern.lead[i]);
         const isArcade = style.startsWith("arcade") || style === "chip" || style === "robot" || style === "playful";
+        const isAttack = style === "arcadeAttack";
         let leadWave = isArcade ? "square" : wave;
-        let leadGain = (isArcade ? 0.11 : 0.09) * bright;
-        let filt = isArcade ? 3200 : 1400 + bright * 1800;
-        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.4 : isArcade ? 0.95 : 1.15);
+        let leadGain = (isAttack ? 0.13 : isArcade ? 0.11 : 0.09) * bright;
+        let filt = isAttack ? 3800 : isArcade ? 3200 : 1400 + bright * 1800;
+        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.4 : isAttack ? 0.75 : isArcade ? 0.95 : 1.15);
         if (style === "synth" || style === "spicy" || style === "electric") {
           leadWave = "sawtooth";
           leadGain = 0.08 * bright;
@@ -1402,6 +1408,18 @@
           playMusicTone(f * 2, t, dur * 0.55, "square", leadGain * 0.35, 4500);
           if (i % 2 === 0) {
             playMusicTone(f * 1.5, t, stepDur * 0.35, "square", leadGain * 0.22, 3800);
+          }
+        }
+        if (isAttack) {
+          // Attack mode: double-time stabs + power fifths
+          if (i % 2 === 0) {
+            playMusicTone(f * 1.498, t, stepDur * 0.4, "square", leadGain * 0.4, 4200);
+          }
+          if (i % 4 === 0) {
+            playMusicKick(t, 0.16 * bright);
+          }
+          if (i % 8 === 4) {
+            playMusicSnare(t, 0.1 * bright);
           }
         }
         if (style === "arcadeBoss" && i % 4 === 0) {
