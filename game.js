@@ -1048,7 +1048,7 @@
       musicEngine.muteGain = musicEngine.ctx.createGain();
       musicEngine.master.connect(musicEngine.muteGain);
       musicEngine.muteGain.connect(musicEngine.ctx.destination);
-      musicEngine.master.gain.value = musicVolume * 0.22;
+      musicEngine.master.gain.value = musicVolume * 0.34;
       musicEngine.muteGain.gain.value = musicMuted ? 0 : 1;
     }
     if (musicEngine.ctx.state === "suspended") {
@@ -1063,7 +1063,7 @@
 
   function applyMusicGains() {
     if (!musicEngine.master || !musicEngine.muteGain) return;
-    musicEngine.master.gain.value = Math.max(0, Math.min(1, musicVolume)) * 0.22;
+    musicEngine.master.gain.value = Math.max(0, Math.min(1, musicVolume)) * 0.34;
     // Shop previews stay audible even if Background music is toggled off
     const audible = musicEngine.previewing || !musicMuted;
     musicEngine.muteGain.gain.value = audible ? 1 : 0;
@@ -1130,42 +1130,88 @@
     const vibe = track.vibe || MUSIC_VIBES.coral;
     const scale = styleScale(vibe.style);
     const style = vibe.style;
-    const steps = 16;
+    const steps = 32; // 2-bar loop at 8th notes — room for real phrases
     const bass = new Array(steps).fill(-1);
     const lead = new Array(steps).fill(-1);
+    const chord = new Array(steps).fill(-1);
+    const kick = new Array(steps).fill(0);
+    const snare = new Array(steps).fill(0);
     const hat = new Array(steps).fill(0);
 
-    const dens = style === "ambient" || style === "ethereal" || style === "hollow" || style === "stealth"
-      ? 0.35
-      : style === "riot" || style === "synth" || style === "chip" || style === "playful"
-        ? 0.85
-        : 0.55;
+    // Catchy deterministic motifs (scale degrees), keyed by style family
+    const motifs = {
+      tropical: [0, 2, 4, 2, 5, 4, 2, 0, 0, 2, 4, 5, 4, 2, 0, -1],
+      synth: [0, 0, 3, 4, 7, 4, 3, 0, 5, 4, 3, 2, 0, 2, 4, 7],
+      hollow: [0, -1, 3, -1, 5, -1, 3, -1, 0, -1, 2, -1, 5, -1, 7, -1],
+      tense: [0, 1, 3, 1, 0, 3, 5, 3, 0, 1, 3, 5, 7, 5, 3, 1],
+      glitch: [0, 7, 3, 10, 0, 5, 12, 3, 7, 0, 10, 5, 3, 12, 7, 0],
+      riot: [0, 0, 3, 0, 5, 0, 3, 7, 0, 3, 5, 7, 5, 3, 0, 3],
+      noir: [0, -1, 2, -1, 3, -1, 5, -1, 7, -1, 5, -1, 3, -1, 2, -1],
+      robot: [0, 2, 0, 4, 0, 2, 5, 2, 0, 4, 7, 4, 5, 2, 0, 2],
+      spicy: [0, 3, 5, 7, 5, 3, 0, 5, 7, 10, 7, 5, 3, 0, 5, 3],
+      stealth: [0, -1, -1, 2, -1, -1, 3, -1, 5, -1, -1, 3, -1, -1, 2, -1],
+      wobble: [0, 0, 3, 3, 5, 5, 3, 0, 7, 5, 3, 0, 5, 3, 0, 0],
+      majestic: [0, 2, 4, 5, 7, 5, 4, 2, 0, 4, 7, 9, 7, 5, 4, 2],
+      crystal: [4, 5, 7, 9, 7, 5, 4, 2, 0, 2, 4, 5, 7, 9, 12, 9],
+      chip: [0, 4, 7, 4, 5, 9, 5, 4, 0, 4, 7, 12, 7, 4, 0, 4],
+      ambient: [0, -1, -1, 4, -1, -1, 7, -1, 5, -1, -1, 4, -1, -1, 2, -1],
+      rumble: [0, 0, -1, 3, 0, -1, 5, 0, 0, 3, -1, 5, 0, 3, 0, -1],
+      ethereal: [7, -1, 9, -1, 12, -1, 9, -1, 5, -1, 7, -1, 9, -1, 5, -1],
+      electric: [0, 3, 5, 7, 10, 7, 5, 3, 0, 5, 7, 12, 10, 7, 5, 0],
+      playful: [0, 2, 4, 5, 4, 2, 0, 4, 5, 7, 5, 4, 2, 0, 2, 4],
+      regal: [0, -1, 4, -1, 7, -1, 4, -1, 0, 2, 4, 7, 5, 4, 2, 0],
+    };
+    const motif = motifs[style] || motifs.tropical;
+    const bassMotif = {
+      tropical: [0, -1, -1, -1, 5, -1, -1, -1, 0, -1, -1, -1, 7, -1, 5, -1],
+      synth: [0, -1, 0, -1, 5, -1, 0, -1, 0, -1, 3, -1, 5, -1, 0, -1],
+      default: [0, -1, -1, -1, 0, -1, -1, -1, 5, -1, -1, -1, 0, -1, 7, -1],
+      wobble: [0, 0, -1, 0, 3, 3, -1, 3, 5, 5, -1, 5, 0, 0, -1, 0],
+      chip: [0, -1, 0, -1, 5, -1, 0, -1, 7, -1, 5, -1, 0, -1, 5, -1],
+      ambient: [0, -1, -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1],
+    };
+    const bMotif = bassMotif[style] || bassMotif.default;
 
     for (let i = 0; i < steps; i++) {
-      if (i % 4 === 0) bass[i] = 0;
-      else if (i % 8 === 4 && dens > 0.4) bass[i] = scale[2] % 12;
-      else if (style === "wobble" && i % 2 === 0) bass[i] = (i % 4 === 0) ? 0 : scale[1];
-      else if (style === "glitch" && i % 3 === 0) bass[i] = scale[i % scale.length];
+      const mi = i % 16;
+      const octaveBoost = i >= 16 && (style === "chip" || style === "playful" || style === "crystal") ? 12 : 0;
 
-      if (i % 2 === 0) hat[i] = style === "ambient" ? 0.2 : 0.45;
-      if (i % 4 === 2) hat[i] = Math.max(hat[i], 0.55);
-      if (style === "riot" || style === "spicy") hat[i] = i % 2 === 0 ? 0.7 : 0.25;
-
-      const leadChance = dens;
-      if (Math.sin(i * 1.7 + vibe.root * 0.01) * 0.5 + 0.5 < leadChance) {
-        if (i % 2 === 0 || dens > 0.7) {
-          lead[i] = scale[(i * 3 + Math.floor(vibe.root / 37)) % scale.length];
-          if (style === "crystal" || style === "cosmic" || style === "golden" || style === "majestic") {
-            if (i % 4 === 0) lead[i] = scale[(i / 4) % scale.length] + 12;
-          }
-          if (style === "chip") lead[i] = scale[i % scale.length] + (i % 8 < 4 ? 12 : 0);
-        }
+      // Lead melody from motif (skip rests)
+      const md = motif[mi];
+      if (md >= 0) {
+        const deg = scale[md % scale.length] + Math.floor(md / scale.length) * 12;
+        lead[i] = deg + octaveBoost;
       }
-      if (style === "noir" && i % 4 === 0) lead[i] = scale[0] + (i % 8 === 0 ? 0 : 7);
-      if (style === "ghost" && i % 8 === 0) lead[i] = scale[4] + 12;
-      if (style === "candy" && i % 2 === 0) lead[i] = scale[(i / 2) % scale.length] + 12;
+
+      // Bass
+      const bd = bMotif[mi];
+      if (bd >= 0) bass[i] = scale[bd % scale.length];
+
+      // Pad chord roots on downbeats
+      if (i % 8 === 0) chord[i] = scale[0];
+      else if (i % 8 === 4) chord[i] = scale[Math.min(3, scale.length - 1)];
+
+      // Kick / snare groove — musical, not hat spam
+      const busy = style === "riot" || style === "synth" || style === "spicy" || style === "chip" || style === "playful" || style === "electric";
+      const sparse = style === "ambient" || style === "ethereal" || style === "stealth" || style === "noir" || style === "hollow";
+      if (sparse) {
+        if (i % 8 === 0) kick[i] = 1;
+        if (i % 16 === 8) snare[i] = 0.7;
+        if (i % 4 === 2) hat[i] = 0.15;
+      } else if (busy) {
+        if (i % 4 === 0) kick[i] = 1;
+        if (i % 8 === 4) snare[i] = 1;
+        if (i % 2 === 1) hat[i] = 0.22;
+      } else {
+        if (i % 4 === 0) kick[i] = 1;
+        if (i % 8 === 4) snare[i] = 0.85;
+        if (i % 4 === 2) hat[i] = 0.2;
+      }
+      if (style === "glitch" && i % 5 === 0) kick[i] = 1;
+      if (style === "wobble" && i % 2 === 0) kick[i] = Math.max(kick[i], 0.7);
     }
-    return { bass, lead, hat, steps, vibe };
+
+    return { bass, lead, chord, kick, snare, hat, steps, vibe };
   }
 
   function musicNoteFreq(root, semitone) {
@@ -1174,7 +1220,7 @@
 
   function playMusicTone(freq, when, dur, type, gainVal, filterFreq) {
     const ctx = musicEngine.ctx;
-    if (!ctx || !musicEngine.master) return;
+    if (!ctx || !musicEngine.master || !freq || freq < 20) return;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     const filt = ctx.createBiquadFilter();
@@ -1182,16 +1228,58 @@
     osc.frequency.setValueAtTime(freq, when);
     filt.type = "lowpass";
     filt.frequency.setValueAtTime(filterFreq || 1800, when);
-    filt.Q.value = 0.7;
+    filt.Q.value = 0.8;
     const peak = Math.max(0.001, gainVal || 0.05);
     g.gain.setValueAtTime(0.0001, when);
-    g.gain.exponentialRampToValueAtTime(peak, when + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, when + Math.max(0.05, dur));
+    g.gain.exponentialRampToValueAtTime(peak, when + Math.min(0.04, dur * 0.2));
+    g.gain.exponentialRampToValueAtTime(0.0001, when + Math.max(0.06, dur));
     osc.connect(filt);
     filt.connect(g);
     g.connect(musicEngine.master);
     osc.start(when);
     osc.stop(when + dur + 0.05);
+  }
+
+  function playMusicKick(when, gainVal) {
+    const ctx = musicEngine.ctx;
+    if (!ctx || !musicEngine.master) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(140, when);
+    osc.frequency.exponentialRampToValueAtTime(45, when + 0.12);
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.001, gainVal || 0.12), when + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.18);
+    osc.connect(g);
+    g.connect(musicEngine.master);
+    osc.start(when);
+    osc.stop(when + 0.2);
+  }
+
+  function playMusicSnare(when, gainVal) {
+    const ctx = musicEngine.ctx;
+    if (!ctx || !musicEngine.master) return;
+    // tonal body
+    playMusicTone(180, when, 0.08, "triangle", (gainVal || 0.06) * 0.5, 900);
+    // noise crack
+    const len = Math.max(1, Math.floor(ctx.sampleRate * 0.08));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    const filt = ctx.createBiquadFilter();
+    filt.type = "bandpass";
+    filt.frequency.value = 1800;
+    g.gain.setValueAtTime(Math.max(0.0001, gainVal || 0.05), when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.09);
+    src.connect(filt);
+    filt.connect(g);
+    g.connect(musicEngine.master);
+    src.start(when);
+    src.stop(when + 0.1);
   }
 
   function playMusicNoise(when, dur, gainVal) {
@@ -1206,8 +1294,8 @@
     const g = ctx.createGain();
     const filt = ctx.createBiquadFilter();
     filt.type = "highpass";
-    filt.frequency.value = 4000;
-    g.gain.setValueAtTime(Math.max(0.0001, gainVal || 0.03), when);
+    filt.frequency.value = 6000;
+    g.gain.setValueAtTime(Math.max(0.0001, gainVal || 0.02), when);
     g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
     src.connect(filt);
     filt.connect(g);
@@ -1219,7 +1307,7 @@
   function scheduleMusicStep() {
     if (!musicEngine.ctx || !musicEngine.pattern || !musicEngine.track) return;
     const ctx = musicEngine.ctx;
-    const lookAhead = 0.12;
+    const lookAhead = 0.15;
     const pattern = musicEngine.pattern;
     const vibe = pattern.vibe;
     const stepDur = 60 / Math.max(40, vibe.bpm) / 2; // 8th notes
@@ -1232,48 +1320,73 @@
       const t = musicEngine.nextTime;
       const root = vibe.root;
 
+      if (pattern.kick[i] > 0) {
+        playMusicKick(t, 0.14 * bright * pattern.kick[i]);
+      }
+      if (pattern.snare[i] > 0) {
+        playMusicSnare(t, 0.07 * bright * pattern.snare[i]);
+      }
+      // Hats stay quiet — supporting sparkle only
+      if (pattern.hat[i] > 0 && style !== "ethereal" && style !== "ambient") {
+        playMusicNoise(t, stepDur * 0.22, 0.008 * pattern.hat[i]);
+      }
+
       if (pattern.bass[i] >= 0) {
-        const f = musicNoteFreq(root, pattern.bass[i]);
-        const bassWave = style === "wobble" || style === "rumble" || style === "glitch" ? "sawtooth" : "triangle";
-        playMusicTone(f, t, stepDur * 1.4, bassWave, 0.07 * bright, 420);
-        if (style === "wobble") {
-          playMusicTone(f * 1.01, t, stepDur * 1.2, "sawtooth", 0.035 * bright, 500);
+        const f = musicNoteFreq(root / 2, pattern.bass[i]);
+        const bassWave =
+          style === "wobble" || style === "rumble" || style === "glitch" || style === "synth"
+            ? "sawtooth"
+            : "triangle";
+        playMusicTone(f, t, stepDur * 1.6, bassWave, 0.11 * bright, 380);
+        if (style === "wobble" || style === "synth") {
+          playMusicTone(f * 2.005, t, stepDur * 1.2, "sawtooth", 0.04 * bright, 600);
         }
+      }
+
+      if (pattern.chord[i] >= 0) {
+        const base = musicNoteFreq(root, pattern.chord[i]);
+        const third = musicNoteFreq(root, pattern.chord[i] + (styleScale(style)[2] || 3));
+        const fifth = musicNoteFreq(root, pattern.chord[i] + 7);
+        const padDur = stepDur * 7.5;
+        playMusicTone(base, t, padDur, "sine", 0.035 * bright, 700);
+        playMusicTone(third, t, padDur, "sine", 0.028 * bright, 900);
+        playMusicTone(fifth, t, padDur, "triangle", 0.022 * bright, 1100);
       }
 
       if (pattern.lead[i] >= 0) {
         const f = musicNoteFreq(root, pattern.lead[i]);
         let leadWave = wave;
-        let leadGain = 0.045 * bright;
-        let filt = 1200 + bright * 1600;
-        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.2 : 1.05);
-        if (style === "synth" || style === "neon") {
+        let leadGain = 0.09 * bright;
+        let filt = 1400 + bright * 1800;
+        let dur = stepDur * (style === "ambient" || style === "ethereal" ? 2.4 : 1.15);
+        if (style === "synth" || style === "spicy" || style === "electric") {
           leadWave = "sawtooth";
-          leadGain = 0.04 * bright;
+          leadGain = 0.08 * bright;
+          filt = 2400;
         }
-        if (style === "chip" || style === "robot") {
+        if (style === "chip" || style === "robot" || style === "playful") {
           leadWave = "square";
-          leadGain = 0.035 * bright;
-          filt = 2200;
+          leadGain = 0.07 * bright;
+          filt = 2800;
         }
-        if (style === "crystal" || style === "cosmic" || style === "golden") {
+        if (style === "crystal" || style === "cosmic" || style === "golden" || style === "majestic") {
           leadWave = "sine";
-          playMusicTone(f * 2, t, dur * 0.8, "sine", leadGain * 0.45, 3200);
+          playMusicTone(f * 2, t, dur * 0.85, "sine", leadGain * 0.4, 4200);
         }
-        if (style === "glitch" && i % 5 === 0) {
-          playMusicTone(f * (1 + (i % 3) * 0.07), t, stepDur * 0.4, "square", 0.03, 1800);
+        if (style === "glitch") {
+          leadWave = "square";
+          if (i % 4 === 3) playMusicTone(f * 1.5, t, stepDur * 0.35, "square", 0.05, 2000);
+        }
+        if (style === "candy" || style === "playful") {
+          playMusicTone(f * 1.5, t, dur * 0.5, "triangle", leadGain * 0.35, 3200);
         }
         playMusicTone(f, t, dur, leadWave, leadGain, filt);
       }
 
-      if (pattern.hat[i] > 0 && style !== "ethereal") {
-        const hatGain = 0.018 * pattern.hat[i] * (style === "stealth" ? 0.4 : 1);
-        playMusicNoise(t, stepDur * 0.35, hatGain);
-      }
-
-      // Soft pad drone for ambient / void / ghost styles
-      if (i === 0 && (style === "ambient" || style === "noir" || style === "hollow" || style === "regal" || style === "ghost" || style === "void" || style === "glitch")) {
-        playMusicTone(root / 2, t, stepDur * pattern.steps * 0.9, "sine", 0.03 * bright, 350);
+      // Style drone beds
+      if (i === 0 && (style === "ambient" || style === "noir" || style === "hollow" || style === "regal" || style === "ghost" || style === "glitch" || style === "ethereal")) {
+        playMusicTone(root / 2, t, stepDur * pattern.steps * 0.95, "sine", 0.045 * bright, 320);
+        playMusicTone(root * 0.75, t, stepDur * pattern.steps * 0.95, "triangle", 0.025 * bright, 450);
       }
 
       musicEngine.nextTime += stepDur;
