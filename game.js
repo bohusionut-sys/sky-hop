@@ -37,6 +37,9 @@
   const EQUIPPED_MUSIC_KEY = "skyHopEquippedMusic";
   const MUSIC_MUTE_KEY = "skyHopMusicMuted";
   const MUSIC_VOLUME_KEY = "skyHopMusicVolume";
+  const MUSIC_ENABLED_KEY = "skyHopMusicEnabled";
+  const VIBRATION_KEY = "skyHopVibration";
+  const SFX_KEY = "skyHopSfx";
   const CHALLENGES_KEY = "skyHopChallenges";
 
   // Coins: 1 coin per this many pixels of horizontal travel
@@ -55,6 +58,9 @@
     { id: "pack5", amount: 5, priceGbp: "0.99", label: "5 Stardust" },
     { id: "pack15", amount: 15, priceGbp: "1.99", label: "15 Stardust" },
     { id: "pack40", amount: 40, priceGbp: "4.99", label: "40 Stardust" },
+    { id: "pack80", amount: 80, priceGbp: "8.99", label: "80 Stardust" },
+    { id: "pack150", amount: 150, priceGbp: "14.99", label: "150 Stardust" },
+    { id: "pack300", amount: 300, priceGbp: "24.99", label: "300 Stardust" },
   ];
 
   /*
@@ -827,6 +833,11 @@
 
   function loadMusicMuted() {
     try {
+      // Prefer explicit enabled key when present; migrate from mute key otherwise.
+      const enabledRaw = localStorage.getItem(MUSIC_ENABLED_KEY);
+      if (enabledRaw === "0" || enabledRaw === "1") {
+        return enabledRaw !== "1";
+      }
       return localStorage.getItem(MUSIC_MUTE_KEY) === "1";
     } catch (_) {
       return false;
@@ -843,8 +854,20 @@
     return 0.45;
   }
 
+  function loadBoolSetting(key, defaultOn) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null || raw === undefined) return !!defaultOn;
+      return raw === "1" || raw === "true";
+    } catch (_) {
+      return !!defaultOn;
+    }
+  }
+
   let musicMuted = loadMusicMuted();
   let musicVolume = loadMusicVolume();
+  let vibrationEnabled = loadBoolSetting(VIBRATION_KEY, true);
+  let sfxEnabled = loadBoolSetting(SFX_KEY, true);
 
   let shopTab = "skins"; // skins | maps | trails | music | stardust
   let shopRarityFilter = "all";
@@ -906,10 +929,19 @@
 
   function persistMusicMute() {
     localStorage.setItem(MUSIC_MUTE_KEY, musicMuted ? "1" : "0");
+    localStorage.setItem(MUSIC_ENABLED_KEY, musicMuted ? "0" : "1");
   }
 
   function persistMusicVolume() {
     localStorage.setItem(MUSIC_VOLUME_KEY, String(musicVolume));
+  }
+
+  function persistVibration() {
+    localStorage.setItem(VIBRATION_KEY, vibrationEnabled ? "1" : "0");
+  }
+
+  function persistSfx() {
+    localStorage.setItem(SFX_KEY, sfxEnabled ? "1" : "0");
   }
 
   function applyMapPalette(map) {
@@ -1033,6 +1065,63 @@
     if (!musicEngine.master || !musicEngine.muteGain) return;
     musicEngine.master.gain.value = Math.max(0, Math.min(1, musicVolume)) * 0.22;
     musicEngine.muteGain.gain.value = musicMuted ? 0 : 1;
+  }
+
+  /** Short haptic pulse when vibration is enabled and supported. */
+  function vibratePulse(pattern) {
+    if (!vibrationEnabled) return;
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+        navigator.vibrate(pattern);
+      }
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  /**
+   * Simple Web Audio SFX blips (independent of BGM mute).
+   * kind: "flap" | "death" | "ui"
+   */
+  function playSfx(kind) {
+    if (!sfxEnabled) return;
+    const ctx = ensureMusicContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (kind === "flap") {
+      osc.type = "square";
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(780, now + 0.06);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } else if (kind === "death") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(90, now + 0.28);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.1, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+      osc.start(now);
+      osc.stop(now + 0.34);
+    } else {
+      // ui click
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(660, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.05);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.06, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
   }
 
   function buildMusicPattern(track) {
@@ -1251,24 +1340,40 @@
     applyMusicGains();
     if (musicMuted) stopMusicLoop();
     else syncBackgroundMusic();
-    syncMusicHud();
+    syncSettingsUI();
+  }
+
+  function setMusicEnabled(enabled) {
+    setMusicMuted(!enabled);
   }
 
   function setMusicVolume(vol) {
     musicVolume = Math.max(0, Math.min(1, Number(vol) || 0));
     persistMusicVolume();
     applyMusicGains();
-    syncMusicHud();
+    syncSettingsUI();
   }
 
-  function syncMusicHud() {
-    const muteBtn = document.getElementById("btn-music-mute");
-    const vol = document.getElementById("music-volume");
-    if (muteBtn) {
-      muteBtn.setAttribute("aria-pressed", musicMuted ? "true" : "false");
-      muteBtn.textContent = musicMuted ? "🔇" : "🔊";
-      muteBtn.title = musicMuted ? "Unmute music" : "Mute music";
-    }
+  function setVibrationEnabled(on) {
+    vibrationEnabled = !!on;
+    persistVibration();
+    syncSettingsUI();
+  }
+
+  function setSfxEnabled(on) {
+    sfxEnabled = !!on;
+    persistSfx();
+    syncSettingsUI();
+  }
+
+  function syncSettingsUI() {
+    const vib = document.getElementById("settings-vibration");
+    const sfx = document.getElementById("settings-sfx");
+    const music = document.getElementById("settings-music");
+    const vol = document.getElementById("settings-music-volume");
+    if (vib) vib.checked = vibrationEnabled;
+    if (sfx) sfx.checked = sfxEnabled;
+    if (music) music.checked = !musicMuted;
     if (vol) {
       vol.value = String(Math.round(musicVolume * 100));
       vol.disabled = musicMuted;
@@ -1685,6 +1790,9 @@
   const challengesListEl = document.getElementById("challenges-list");
   const challengesPeriodLabel = document.getElementById("challenges-period-label");
   const challengeTabs = document.querySelectorAll(".challenge-tab");
+  const btnSettings = document.getElementById("btn-settings");
+  const settingsPage = document.getElementById("settings-page");
+  const settingsBack = document.getElementById("settings-back");
   const coinBalanceEl = document.getElementById("coin-balance");
   const stardustBalanceEl = document.getElementById("stardust-balance") || document.getElementById("gems-balance");
   const shopCoinBalanceEl = document.getElementById("shop-coin-balance");
@@ -1775,6 +1883,11 @@
   function openRankPage() {
     refreshLeaderboardUI();
     openPage(rankPage);
+  }
+
+  function openSettingsPage() {
+    syncSettingsUI();
+    openPage(settingsPage);
   }
 
   function syncCoinHUD() {
@@ -2091,6 +2204,26 @@
       renderChallengesList();
     });
   });
+
+  if (btnSettings) {
+    btnSettings.addEventListener("click", (e) => {
+      e.stopPropagation();
+      resumeMusicOnGesture();
+      playSfx("ui");
+      openSettingsPage();
+    });
+  }
+  if (settingsBack) {
+    settingsBack.addEventListener("click", () => {
+      playSfx("ui");
+      closePage(settingsPage);
+    });
+  }
+  if (settingsPage) {
+    settingsPage.addEventListener("click", (e) => {
+      if (e.target === settingsPage) closePage(settingsPage);
+    });
+  }
 
   checkoutCancel.addEventListener("click", () => {
     pendingStardustPack = null;
@@ -2593,6 +2726,7 @@
   btnShop.addEventListener("click", (e) => {
     e.stopPropagation();
     resumeMusicOnGesture();
+    playSfx("ui");
     openShop();
   });
   shopClose.addEventListener("click", closeShop);
@@ -2615,14 +2749,31 @@
     });
   });
 
-  (function wireMusicHud() {
-    const muteBtn = document.getElementById("btn-music-mute");
-    const vol = document.getElementById("music-volume");
-    if (muteBtn) {
-      muteBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
+  (function wireSettingsControls() {
+    const vib = document.getElementById("settings-vibration");
+    const sfx = document.getElementById("settings-sfx");
+    const music = document.getElementById("settings-music");
+    const vol = document.getElementById("settings-music-volume");
+    if (vib) {
+      vib.addEventListener("change", () => {
         resumeMusicOnGesture();
-        setMusicMuted(!musicMuted);
+        setVibrationEnabled(vib.checked);
+        if (vib.checked) vibratePulse(12);
+        playSfx("ui");
+      });
+    }
+    if (sfx) {
+      sfx.addEventListener("change", () => {
+        resumeMusicOnGesture();
+        setSfxEnabled(sfx.checked);
+        if (sfx.checked) playSfx("ui");
+      });
+    }
+    if (music) {
+      music.addEventListener("change", () => {
+        resumeMusicOnGesture();
+        setMusicEnabled(music.checked);
+        playSfx("ui");
       });
     }
     if (vol) {
@@ -2637,7 +2788,7 @@
       vol.addEventListener("mousedown", (e) => e.stopPropagation());
       vol.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
     }
-    syncMusicHud();
+    syncSettingsUI();
   })();
 
   // First user gesture unlocks AudioContext (mobile browsers)
@@ -2693,7 +2844,7 @@
   persistEquippedTrail();
   persistOwnedMusic();
   persistEquippedMusic();
-  syncMusicHud();
+  syncSettingsUI();
 
   function resetGame() {
     state = STATE.READY;
@@ -2747,6 +2898,7 @@
     if (removeAdsPage && !removeAdsPage.classList.contains("hidden")) return;
     if (rankPage && !rankPage.classList.contains("hidden")) return;
     if (challengesPage && !challengesPage.classList.contains("hidden")) return;
+    if (settingsPage && !settingsPage.classList.contains("hidden")) return;
     if (!checkoutModal.classList.contains("hidden")) return;
     if (state === STATE.OVER) {
       if (overTimer > 20) {
@@ -2760,6 +2912,8 @@
     }
     bird.vy = FLAP;
     bird.wing = 8;
+    playSfx("flap");
+    vibratePulse(10);
     const skin = getEquippedSkin();
     const pColor = skin.trail || skin.accent || skin.belly;
     for (let i = 0; i < 6; i++) {
@@ -2791,6 +2945,7 @@
       if (challengesPage) closePage(challengesPage);
       if (rankPage) closePage(rankPage);
       if (removeAdsPage) closePage(removeAdsPage);
+      if (settingsPage) closePage(settingsPage);
     }
   }
 
@@ -2892,6 +3047,8 @@
     flash = 8;
     overTimer = 0;
     bird.vy = Math.min(bird.vy, 2);
+    playSfx("death");
+    vibratePulse([30, 40, 30]);
 
     coinsEarnedThisRun = Math.floor(runDistance / PIXELS_PER_COIN);
     stardustEarnedThisRun = Math.floor(score / PIPES_PER_STARDUST);

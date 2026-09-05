@@ -50,6 +50,8 @@ body {
   user-select: none;
   --btn-shop-top: 10px;
   --btn-shop-left: 10px;
+  --btn-settings-top: 48px;
+  --btn-settings-left: 10px;
   --btn-rank-top: 10px;
   --btn-rank-left: 50%;
   --btn-noads-top: 42%;
@@ -139,55 +141,13 @@ body {
   z-index: 6;
 }
 
-/* Compact mute / volume — stays usable during play */
-#music-hud {
+/* Settings — directly under Shop (same left column) */
+#btn-settings,
+.frame-btn-settings {
   position: absolute;
-  top: 48px;
-  left: 10px;
+  top: var(--btn-settings-top);
+  left: var(--btn-settings-left);
   z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 4px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(233, 196, 106, 0.4);
-  border-radius: 999px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  pointer-events: auto;
-}
-
-.music-mute-btn {
-  border: none;
-  background: transparent;
-  color: #e9c46a;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 0.95rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  display: grid;
-  place-items: center;
-}
-
-.music-mute-btn:hover {
-  filter: brightness(1.15);
-}
-
-.music-mute-btn[aria-pressed="true"] {
-  color: #94a3b8;
-}
-
-.music-volume {
-  width: 72px;
-  height: 18px;
-  accent-color: #e9c46a;
-  cursor: pointer;
-}
-
-.music-volume:disabled {
-  opacity: 0.45;
 }
 
 /* YELLOW mark: top-center between Shop and coin HUD */
@@ -1411,4 +1371,78 @@ body.playing .promo-banner {
 #promo,
 .promo-banner {
   display: none !important;
+}
+
+/* --- Settings page --- */
+.settings-body {
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(233, 196, 106, 0.28);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.settings-row-slider {
+  cursor: default;
+  flex-wrap: wrap;
+}
+
+.settings-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-row-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e9c46a;
+}
+
+.settings-row-desc {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.35;
+}
+
+.settings-toggle {
+  width: 22px;
+  height: 22px;
+  accent-color: #e9c46a;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.settings-volume {
+  width: 100%;
+  max-width: 220px;
+  height: 22px;
+  accent-color: #e9c46a;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.settings-row-slider .settings-volume {
+  width: min(100%, 180px);
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.settings-volume:disabled {
+  opacity: 0.45;
 }
