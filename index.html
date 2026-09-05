@@ -21,9 +21,9 @@
             <span class="coin-glyph" aria-hidden="true"></span>
             <span id="coin-balance">0</span>
           </div>
-          <div id="gems-hud" title="Gems balance">
-            <span class="gems-glyph" aria-hidden="true"></span>
-            <span id="gems-balance">0</span>
+          <div id="stardust-hud" title="Stardust balance">
+            <span class="stardust-glyph" aria-hidden="true"></span>
+            <span id="stardust-balance">0</span>
           </div>
         </div>
 
@@ -50,12 +50,6 @@
         <p class="promo-kicker">Thank you</p>
         <h3>Ads removed</h3>
         <p class="promo-desc">You’re all set — enjoy uninterrupted play.</p>
-      </div>
-      <div class="promo-card page-card gems-promo-card">
-        <p class="promo-kicker">Gems</p>
-        <h3>Buy Gems</h3>
-        <p class="promo-desc">Legendaries need Gems. Earn 1 per 25 pipes, or grab a pack.</p>
-        <button type="button" id="btn-buy-gems-promo" class="promo-btn">Buy Gems</button>
       </div>
     </div>
   </div>
@@ -84,19 +78,6 @@
     </div>
   </div>
 
-
-  <!-- Full page: Buy Gems -->
-  <div id="gems-page" class="overlay page-overlay hidden" aria-hidden="true" role="dialog" aria-label="Buy gems">
-    <div class="overlay-panel page-panel">
-      <header class="page-header">
-        <button type="button" id="gems-back" class="btn-back" aria-label="Back to main">← Back</button>
-        <h2>Buy Gems</h2>
-      </header>
-      <p class="gems-page-intro">Gems unlock <strong>Legendary</strong> skins and maps. Simulated GBP checkout — no real payment.</p>
-      <div id="gems-packs" class="gems-packs"></div>
-    </div>
-  </div>
-
   <!-- Skin & map shop -->
   <div id="shop-modal" class="overlay hidden" aria-hidden="true" role="dialog" aria-label="Sky Hop shop">
     <div class="overlay-panel shop-panel">
@@ -107,12 +88,11 @@
             <span class="coin-glyph" aria-hidden="true"></span>
             <span id="shop-coin-balance">0</span>
           </div>
-          <div class="shop-gems">
-            <span class="gems-glyph" aria-hidden="true"></span>
-            <span id="shop-gems-balance">0</span>
+          <div class="shop-stardust">
+            <span class="stardust-glyph" aria-hidden="true"></span>
+            <span id="shop-stardust-balance">0</span>
           </div>
         </div>
-        <button type="button" id="btn-buy-gems" class="btn-buy-gems" aria-label="Buy gems">Buy Gems</button>
         <button type="button" id="shop-close" class="btn-ghost shop-close" aria-label="Close shop">Close</button>
       </header>
       <div class="shop-live">
@@ -122,15 +102,16 @@
       <div class="shop-tabs" role="tablist" aria-label="Shop categories">
         <button type="button" class="shop-tab active" data-tab="skins" role="tab" aria-selected="true">Skins (20)</button>
         <button type="button" class="shop-tab" data-tab="maps" role="tab" aria-selected="false">Maps (20)</button>
+        <button type="button" class="shop-tab" data-tab="stardust" role="tab" aria-selected="false">Stardust</button>
       </div>
-      <div class="shop-filters" role="toolbar" aria-label="Filter by rarity">
+      <div id="shop-filters" class="shop-filters" role="toolbar" aria-label="Filter by rarity">
         <button type="button" class="shop-filter active" data-rarity="all">All</button>
         <button type="button" class="shop-filter" data-rarity="common">Common</button>
         <button type="button" class="shop-filter" data-rarity="rare">Rare</button>
         <button type="button" class="shop-filter" data-rarity="epic">Epic</button>
         <button type="button" class="shop-filter" data-rarity="legendary">Legendary</button>
       </div>
-      <p class="shop-hint">Grouped by rarity. Coins unlock Common–Epic. <strong>Gems</strong> unlock Legendaries only (earn 1 per 25 pipes, or Buy Gems).</p>
+      <p id="shop-hint" class="shop-hint">Grouped by rarity. Coins unlock Common–Epic. <strong>Stardust</strong> unlocks Legendaries only (earn 1 per 25 pipes, or buy packs in the Stardust tab).</p>
       <div id="shop-grid" class="shop-grid"></div>
     </div>
   </div>

@@ -27,27 +27,27 @@
   const LB_PREFIX = "skyHopLB_";
   const OWNED_SKINS_KEY = "skyHopOwnedSkins";
   const EQUIPPED_SKIN_KEY = "skyHopEquippedSkin";
-  const GEMS_KEY = "skyHopGems";
-  const GEMS_KEY_LEGACY = "skyHopStarDust";
+  const STARDUST_KEY = "skyHopStarDust";
+  const STARDUST_KEY_LEGACY_GEMS = "skyHopGems";
   const OWNED_MAPS_KEY = "skyHopOwnedMaps";
   const EQUIPPED_MAP_KEY = "skyHopEquippedMap";
 
   // Coins: 1 coin per this many pixels of horizontal travel
   const PIXELS_PER_COIN = 40;
-  // Gems: 1 per this many pipes cleared in a run (slow free earn)
-  const PIPES_PER_GEM = 25;
+  // Stardust: 1 per this many pipes cleared in a run (slow free earn)
+  const PIPES_PER_STARDUST = 25;
   const AD_EVERY_N_RUNS = 3;
   const AD_COUNTDOWN_SEC = 5;
   const LB_MAX = 8;
-  const SPECIAL_CURRENCY_NAME = "Gems";
+  const SPECIAL_CURRENCY_NAME = "Stardust";
   const RARITY_ORDER = { legendary: 0, epic: 1, rare: 2, common: 3 };
   const RARITY_SECTIONS = ["legendary", "epic", "rare", "common"];
 
-  // Simulated gem packs (GBP)
-  const GEM_PACKS = [
-    { id: "pack5", gems: 5, priceGbp: "0.99", label: "5 Gems" },
-    { id: "pack15", gems: 15, priceGbp: "1.99", label: "15 Gems" },
-    { id: "pack40", gems: 40, priceGbp: "4.99", label: "40 Gems" },
+  // Simulated Stardust packs (GBP)
+  const STARDUST_PACKS = [
+    { id: "pack5", amount: 5, priceGbp: "0.99", label: "5 Stardust" },
+    { id: "pack15", amount: 15, priceGbp: "1.99", label: "15 Stardust" },
+    { id: "pack40", amount: 40, priceGbp: "4.99", label: "40 Stardust" },
   ];
 
   const NPC_NAMES = [
@@ -478,30 +478,33 @@
   let pipeSpeed = PIPE_SPEED_BASE;
   let pipeGap = PIPE_GAP_BASE;
 
-  function loadGemsBalance() {
-    const fresh = localStorage.getItem(GEMS_KEY);
-    if (fresh !== null && fresh !== "") {
-      return Number(fresh) || 0;
-    }
-    const legacy = localStorage.getItem(GEMS_KEY_LEGACY);
-    if (legacy !== null && legacy !== "") {
-      const migrated = Number(legacy) || 0;
-      localStorage.setItem(GEMS_KEY, String(migrated));
+  function loadStardustBalance() {
+    const canonicalRaw = localStorage.getItem(STARDUST_KEY);
+    const legacyGemsRaw = localStorage.getItem(STARDUST_KEY_LEGACY_GEMS);
+    const hasCanonical = canonicalRaw !== null && canonicalRaw !== "";
+    const hasLegacyGems = legacyGemsRaw !== null && legacyGemsRaw !== "";
+    const canonical = hasCanonical ? Number(canonicalRaw) || 0 : 0;
+    const legacyGems = hasLegacyGems ? Number(legacyGemsRaw) || 0 : 0;
+
+    if (hasLegacyGems) {
+      // Prefer skyHopStarDust; migrate skyHopGems once (max to avoid double-count), then stop writing gems key.
+      const migrated = hasCanonical ? Math.max(canonical, legacyGems) : legacyGems;
+      localStorage.setItem(STARDUST_KEY, String(migrated));
       try {
-        localStorage.removeItem(GEMS_KEY_LEGACY);
+        localStorage.removeItem(STARDUST_KEY_LEGACY_GEMS);
       } catch (_) {
         /* ignore */
       }
       return migrated;
     }
-    return 0;
+    return hasCanonical ? canonical : 0;
   }
 
   let coins = Number(localStorage.getItem(COINS_KEY) || 0) || 0;
-  let gems = loadGemsBalance();
+  let stardust = loadStardustBalance();
   let runDistance = 0;
   let coinsEarnedThisRun = 0;
-  let gemsEarnedThisRun = 0;
+  let stardustEarnedThisRun = 0;
   let runsSinceAd = Number(localStorage.getItem(RUNS_KEY) || 0) || 0;
   let adsRemoved = localStorage.getItem(ADS_REMOVED_KEY) === "1";
   let playerName = (localStorage.getItem(NAME_KEY) || "You").slice(0, 16);
@@ -548,7 +551,7 @@
     equippedMapId = DEFAULT_MAP_ID;
   }
 
-  let shopTab = "skins"; // skins | maps
+  let shopTab = "skins"; // skins | maps | stardust
   let shopRarityFilter = "all";
   let shopPreviewSkinId = equippedSkinId;
   let shopPreviewMapId = equippedMapId;
@@ -773,20 +776,18 @@
   const removeAdsBack = document.getElementById("remove-ads-back");
   const rankBack = document.getElementById("rank-back");
   const coinBalanceEl = document.getElementById("coin-balance");
-  const gemsBalanceEl = document.getElementById("gems-balance") || document.getElementById("stardust-balance");
+  const stardustBalanceEl = document.getElementById("stardust-balance") || document.getElementById("gems-balance");
   const shopCoinBalanceEl = document.getElementById("shop-coin-balance");
-  const shopGemsBalanceEl = document.getElementById("shop-gems-balance") || document.getElementById("shop-stardust-balance");
+  const shopStardustBalanceEl = document.getElementById("shop-stardust-balance") || document.getElementById("shop-gems-balance");
   const btnShop = document.getElementById("btn-shop");
-  const btnBuyGems = document.getElementById("btn-buy-gems");
-  const btnBuyGemsPromo = document.getElementById("btn-buy-gems-promo");
-  const gemsPage = document.getElementById("gems-page");
-  const gemsBack = document.getElementById("gems-back");
-  const gemsPacksEl = document.getElementById("gems-packs");
   const shopModal = document.getElementById("shop-modal");
   const shopClose = document.getElementById("shop-close");
   const shopGrid = document.getElementById("shop-grid");
   const shopTabs = document.querySelectorAll(".shop-tab");
+  const shopFiltersEl = document.getElementById("shop-filters");
   const shopFilters = document.querySelectorAll(".shop-filter");
+  const shopHintEl = document.getElementById("shop-hint");
+  const shopLiveEl = document.querySelector(".shop-live");
   const shopLivePreview = document.getElementById("shop-live-preview");
   const shopPreviewLabel = document.getElementById("shop-preview-label");
   const adOverlay = document.getElementById("ad-overlay");
@@ -797,8 +798,8 @@
   const checkoutPriceEl = document.querySelector(".checkout-price");
   const checkoutCancel = document.getElementById("checkout-cancel");
   const checkoutConfirm = document.getElementById("checkout-confirm");
-  let checkoutKind = "ads"; // ads | gems
-  let pendingGemPack = null;
+  let checkoutKind = "ads"; // ads | stardust
+  let pendingStardustPack = null;
 
   let activePeriod = "daily";
 
@@ -867,11 +868,11 @@
 
   function syncCoinHUD() {
     const text = String(coins);
-    const gemText = String(gems);
+    const stardustText = String(stardust);
     if (coinBalanceEl) coinBalanceEl.textContent = text;
     if (shopCoinBalanceEl) shopCoinBalanceEl.textContent = text;
-    if (gemsBalanceEl) gemsBalanceEl.textContent = gemText;
-    if (shopGemsBalanceEl) shopGemsBalanceEl.textContent = gemText;
+    if (stardustBalanceEl) stardustBalanceEl.textContent = stardustText;
+    if (shopStardustBalanceEl) shopStardustBalanceEl.textContent = stardustText;
   }
 
   function persistCoins() {
@@ -879,8 +880,9 @@
     syncCoinHUD();
   }
 
-  function persistGems() {
-    localStorage.setItem(GEMS_KEY, String(gems));
+  function persistStardust() {
+    localStorage.setItem(STARDUST_KEY, String(stardust));
+    // Never write skyHopGems after migration
     syncCoinHUD();
   }
 
@@ -896,22 +898,22 @@
     return `${item.price} coins`;
   }
 
-  function isGemsCurrency(item) {
+  function isStardustCurrency(item) {
     return item.currency === "gems" || item.currency === "stardust";
   }
 
   function canAfford(item) {
     if (item.price <= 0) return true;
-    if (isGemsCurrency(item)) return gems >= item.price;
+    if (isStardustCurrency(item)) return stardust >= item.price;
     return coins >= item.price;
   }
 
   function spendForItem(item) {
     if (item.price <= 0) return true;
-    if (isGemsCurrency(item)) {
-      if (gems < item.price) return false;
-      gems -= item.price;
-      persistGems();
+    if (isStardustCurrency(item)) {
+      if (stardust < item.price) return false;
+      stardust -= item.price;
+      persistStardust();
       return true;
     }
     if (coins < item.price) return false;
@@ -1053,15 +1055,15 @@
   function openCheckoutAds() {
     if (adsRemoved) return;
     checkoutKind = "ads";
-    pendingGemPack = null;
+    pendingStardustPack = null;
     setCheckoutUI("Remove ads — Sky Hop", "£1.99 GBP", "Confirm £1.99");
     checkoutModal.classList.remove("hidden");
     checkoutModal.setAttribute("aria-hidden", "false");
   }
 
-  function openCheckoutGemPack(pack) {
-    checkoutKind = "gems";
-    pendingGemPack = pack;
+  function openCheckoutStardustPack(pack) {
+    checkoutKind = "stardust";
+    pendingStardustPack = pack;
     setCheckoutUI(
       `${pack.label} — Sky Hop`,
       `£${pack.priceGbp} GBP`,
@@ -1075,30 +1077,36 @@
     openCheckoutAds();
   }
 
-  function renderGemPacks() {
-    if (!gemsPacksEl) return;
-    gemsPacksEl.innerHTML = "";
-    for (const pack of GEM_PACKS) {
-      const card = document.createElement("div");
-      card.className = "gem-pack-card";
+  function renderStardustPacks() {
+    shopGrid.innerHTML = "";
+    const intro = document.createElement("div");
+    intro.className = "shop-section-header rarity-legendary";
+    intro.innerHTML =
+      `<span class="shop-section-title">Buy Stardust</span>` +
+      `<span class="shop-section-count">${STARDUST_PACKS.length} packs</span>`;
+    shopGrid.appendChild(intro);
+    const wrap = document.createElement("div");
+    wrap.className = "stardust-packs";
+    shopGrid.appendChild(wrap);
+    for (const pack of STARDUST_PACKS) {
+      const card = document.createElement("article");
+      card.className = "stardust-pack-card";
       card.innerHTML =
-        `<p class="gem-pack-amount">${pack.gems} Gems</p>` +
-        `<p class="gem-pack-price">£${pack.priceGbp} <span>GBP</span></p>` +
-        `<p class="gem-pack-note">Simulated purchase — no real payment.</p>`;
+        `<div class="stardust-pack-icon" aria-hidden="true"></div>` +
+        `<p class="stardust-pack-amount">${pack.amount} Stardust</p>` +
+        `<p class="stardust-pack-price">£${pack.priceGbp} <span>GBP</span></p>` +
+        `<p class="stardust-pack-note">Simulated purchase — no real payment.</p>`;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "promo-btn gem-pack-btn";
+      btn.className = "promo-btn stardust-pack-btn";
       btn.textContent = `Buy · £${pack.priceGbp}`;
-      btn.addEventListener("click", () => openCheckoutGemPack(pack));
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openCheckoutStardustPack(pack);
+      });
       card.appendChild(btn);
-      gemsPacksEl.appendChild(card);
+      wrap.appendChild(card);
     }
-  }
-
-  function openGemsPage() {
-    renderGemPacks();
-    syncCoinHUD();
-    if (gemsPage) openPage(gemsPage);
   }
 
   nameInput.value = playerName;
@@ -1163,17 +1171,17 @@
   }
 
   checkoutCancel.addEventListener("click", () => {
-    pendingGemPack = null;
+    pendingStardustPack = null;
     checkoutKind = "ads";
     checkoutModal.classList.add("hidden");
     checkoutModal.setAttribute("aria-hidden", "true");
   });
 
   checkoutConfirm.addEventListener("click", () => {
-    if (checkoutKind === "gems" && pendingGemPack) {
-      gems += pendingGemPack.gems;
-      persistGems();
-      pendingGemPack = null;
+    if (checkoutKind === "stardust" && pendingStardustPack) {
+      stardust += pendingStardustPack.amount;
+      persistStardust();
+      pendingStardustPack = null;
       checkoutKind = "ads";
       checkoutModal.classList.add("hidden");
       checkoutModal.setAttribute("aria-hidden", "true");
@@ -1248,18 +1256,30 @@
   }
 
   function syncShopChrome() {
+    const isCurrencyTab = shopTab === "stardust";
     shopTabs.forEach((t) => {
       const on = t.dataset.tab === shopTab;
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
       const kind = t.dataset.tab;
-      const count = kind === "maps" ? MAPS.length : SKINS.length;
-      const base = kind === "maps" ? "Maps" : "Skins";
-      t.textContent = `${base} (${count})`;
+      if (kind === "stardust") {
+        t.textContent = "Stardust";
+      } else {
+        const count = kind === "maps" ? MAPS.length : SKINS.length;
+        const base = kind === "maps" ? "Maps" : "Skins";
+        t.textContent = `${base} (${count})`;
+      }
     });
     shopFilters.forEach((f) => {
       f.classList.toggle("active", f.dataset.rarity === shopRarityFilter);
     });
+    if (shopFiltersEl) shopFiltersEl.classList.toggle("hidden", isCurrencyTab);
+    if (shopLiveEl) shopLiveEl.classList.toggle("hidden", isCurrencyTab);
+    if (shopHintEl) {
+      shopHintEl.innerHTML = isCurrencyTab
+        ? "Purchase <strong>Stardust</strong> packs with simulated GBP checkout. Stardust unlocks Legendary skins &amp; maps."
+        : "Grouped by rarity. Coins unlock Common–Epic. <strong>Stardust</strong> unlocks Legendaries only (earn 1 per 25 pipes, or buy packs in the Stardust tab).";
+    }
   }
 
   function updateShopLivePreview() {
@@ -1267,10 +1287,14 @@
     const skin = SKIN_BY_ID[shopPreviewSkinId] || getEquippedSkin();
     const map = MAP_BY_ID[shopPreviewMapId] || getEquippedMap();
     if (shopPreviewLabel) {
-      shopPreviewLabel.textContent =
-        shopTab === "maps"
-          ? `Map: ${map.name} · ${rarityLabel(map.rarity)}`
-          : `Skin: ${skin.name} · ${rarityLabel(skin.rarity)}`;
+      if (shopTab === "stardust") {
+        shopPreviewLabel.textContent = "Stardust packs";
+      } else {
+        shopPreviewLabel.textContent =
+          shopTab === "maps"
+            ? `Map: ${map.name} · ${rarityLabel(map.rarity)}`
+            : `Skin: ${skin.name} · ${rarityLabel(skin.rarity)}`;
+      }
     }
     // animate trail for preview
     if (frames % 2 === 0) {
@@ -1312,7 +1336,7 @@
         ? '<span class="skin-price">Equipped</span>'
         : "<span>Owned</span>";
     } else {
-      const curClass = isGemsCurrency(item) ? "skin-price gems" : "skin-price";
+      const curClass = isStardustCurrency(item) ? "skin-price stardust" : "skin-price";
       meta.innerHTML = `<span class="${curClass}">${priceLabel(item)}</span>`;
     }
 
@@ -1353,12 +1377,12 @@
       });
     } else {
       btn.classList.add("buy");
-      if (isGemsCurrency(item)) btn.classList.add("buy-gems");
+      if (isStardustCurrency(item)) btn.classList.add("buy-stardust");
       const afford = canAfford(item);
       btn.textContent = afford
         ? "Buy"
-        : isGemsCurrency(item)
-          ? "Need Gems"
+        : isStardustCurrency(item)
+          ? "Need Stardust"
           : "Need coins";
       btn.disabled = !afford;
       btn.addEventListener("click", (e) => {
@@ -1401,6 +1425,10 @@
     shopGrid.innerHTML = "";
     syncCoinHUD();
     syncShopChrome();
+    if (shopTab === "stardust") {
+      renderStardustPacks();
+      return;
+    }
     const catalog = shopTab === "maps" ? MAPS : SKINS;
     const isMap = shopTab === "maps";
     let items = sortByRarity(catalog);
@@ -1478,28 +1506,6 @@
     });
   });
 
-  if (btnBuyGems) {
-    btnBuyGems.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openGemsPage();
-    });
-  }
-  if (btnBuyGemsPromo) {
-    btnBuyGemsPromo.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openGemsPage();
-    });
-  }
-  if (gemsBack) {
-    gemsBack.addEventListener("click", () => closePage(gemsPage));
-  }
-  if (gemsPage) {
-    gemsPage.addEventListener("click", (e) => {
-      if (e.target === gemsPage) closePage(gemsPage);
-    });
-  }
-  renderGemPacks();
-
   function showAdThen(callback) {
     adBlocking = true;
     pendingStartAfterAd = true;
@@ -1555,7 +1561,7 @@
     pipeGap = PIPE_GAP_BASE;
     runDistance = 0;
     coinsEarnedThisRun = 0;
-    gemsEarnedThisRun = 0;
+    stardustEarnedThisRun = 0;
     trailParticles = [];
     bird.x = BIRD_X;
     bird.y = H / 2 - 20;
@@ -1608,7 +1614,6 @@
     if (!shopModal.classList.contains("hidden")) return;
     if (removeAdsPage && !removeAdsPage.classList.contains("hidden")) return;
     if (rankPage && !rankPage.classList.contains("hidden")) return;
-    if (gemsPage && !gemsPage.classList.contains("hidden")) return;
     if (!checkoutModal.classList.contains("hidden")) return;
     if (state === STATE.OVER) {
       if (overTimer > 20) {
@@ -1759,16 +1764,16 @@
     bird.vy = Math.min(bird.vy, 2);
 
     coinsEarnedThisRun = Math.floor(runDistance / PIXELS_PER_COIN);
-    gemsEarnedThisRun = Math.floor(score / PIPES_PER_GEM);
+    stardustEarnedThisRun = Math.floor(score / PIPES_PER_STARDUST);
     if (coinsEarnedThisRun > 0) {
       coins += coinsEarnedThisRun;
       persistCoins();
     }
-    if (gemsEarnedThisRun > 0) {
-      gems += gemsEarnedThisRun;
-      persistGems();
+    if (stardustEarnedThisRun > 0) {
+      stardust += stardustEarnedThisRun;
+      persistStardust();
     }
-    if (coinsEarnedThisRun <= 0 && gemsEarnedThisRun <= 0) {
+    if (coinsEarnedThisRun <= 0 && stardustEarnedThisRun <= 0) {
       syncCoinHUD();
     }
 
@@ -2436,11 +2441,11 @@
 
       ctx.fillStyle = C.coin;
       ctx.fillText(`Coins +${coinsEarnedThisRun}`, W / 2, py + 112);
-      ctx.fillStyle = C.gem;
-      ctx.fillText(`Gems +${gemsEarnedThisRun}`, W / 2, py + 132);
+      ctx.fillStyle = C.stardust || C.gem;
+      ctx.fillText(`Stardust +${stardustEarnedThisRun}`, W / 2, py + 132);
       ctx.font = "12px Segoe UI, system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.fillText(`Bag ${coins} · Gems ${gems}`, W / 2, py + 152);
+      ctx.fillText(`Bag ${coins} · Stardust ${stardust}`, W / 2, py + 152);
 
       if (!adsRemoved) {
         ctx.font = "12px Segoe UI, system-ui, sans-serif";
