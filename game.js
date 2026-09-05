@@ -1115,7 +1115,7 @@
     const intro = document.createElement("div");
     intro.className = "shop-section-header rarity-legendary";
     intro.innerHTML =
-      `<span class="shop-section-title">Buy Stardust</span>` +
+      `<span class="shop-section-title">Stardust Packs</span>` +
       `<span class="shop-section-count">${STARDUST_PACKS.length} packs</span>`;
     shopGrid.appendChild(intro);
     const wrap = document.createElement("div");
@@ -1320,20 +1320,25 @@
       } else if (kind === "maps") {
         t.textContent = `Maps (${MAPS.length})`;
       } else if (kind === "trails") {
-        t.textContent = `Trails (${TRAILS.length})`;
+        t.textContent = `Light Trails (${TRAILS.length})`;
       } else {
-        t.textContent = `Skins (${SKINS.length})`;
+        t.textContent = `Character Skins (${SKINS.length})`;
       }
     });
-    shopFilters.forEach((f) => {
-      f.classList.toggle("active", f.dataset.rarity === shopRarityFilter);
-    });
-    if (shopFiltersEl) shopFiltersEl.classList.toggle("hidden", isCurrencyTab);
+    // Rarity filters removed from UI — shop uses named rarity sections only
+    if (shopFiltersEl) {
+      shopFiltersEl.classList.add("hidden");
+      shopFiltersEl.hidden = true;
+    }
     if (shopLiveEl) shopLiveEl.classList.toggle("hidden", isCurrencyTab);
     if (shopHintEl) {
       shopHintEl.innerHTML = isCurrencyTab
-        ? "Purchase <strong>Stardust</strong> packs with simulated GBP checkout. Stardust unlocks Legendary skins, maps &amp; trails."
-        : "Grouped by rarity. Coins unlock Common–Epic. <strong>Stardust</strong> unlocks Legendaries only (earn 1 per 25 pipes, or buy packs in the Stardust tab). Trails equip independently of skins.";
+        ? "Purchase <strong>Stardust</strong> packs here. Stardust unlocks Legendary skins, maps &amp; light trails."
+        : shopTab === "maps"
+          ? "Map themes grouped by rarity. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries."
+          : shopTab === "trails"
+            ? "Light trails grouped by rarity. Equip independently of your skin. Legendaries need <strong>Stardust</strong>."
+            : "Character skins grouped by rarity. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries.";
     }
   }
 
@@ -1526,22 +1531,20 @@
       items = items.filter((it) => it.rarity === shopRarityFilter);
     }
 
-    if (shopRarityFilter === "all") {
-      for (const rarity of RARITY_SECTIONS) {
-        const group = items.filter((it) => it.rarity === rarity);
-        if (!group.length) continue;
-        const header = document.createElement("div");
-        header.className = "shop-section-header rarity-" + rarity;
-        header.innerHTML =
-          `<span class="shop-section-title">${rarityLabel(rarity)}</span>` +
-          `<span class="shop-section-count">${group.length}</span>`;
-        shopGrid.appendChild(header);
-        for (const item of group) {
-          appendShopCard(item, kind);
-        }
-      }
-    } else {
-      for (const item of items) {
+    const kindNoun =
+      kind === "maps" ? "Maps" : kind === "trails" ? "Light Trails" : "Character Skins";
+    // Always show rarity sections with category-aware titles (no separate filter UI)
+    shopRarityFilter = "all";
+    for (const rarity of RARITY_SECTIONS) {
+      const group = items.filter((it) => it.rarity === rarity);
+      if (!group.length) continue;
+      const header = document.createElement("div");
+      header.className = "shop-section-header rarity-" + rarity;
+      header.innerHTML =
+        `<span class="shop-section-title">${rarityLabel(rarity)} ${kindNoun}</span>` +
+        `<span class="shop-section-count">${group.length}</span>`;
+      shopGrid.appendChild(header);
+      for (const item of group) {
         appendShopCard(item, kind);
       }
     }

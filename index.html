@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Sky Hop</title>
   <link rel="stylesheet" href="style.css" />
@@ -100,19 +101,13 @@
         <p id="shop-preview-label" class="shop-preview-label">Preview</p>
       </div>
       <div class="shop-tabs" role="tablist" aria-label="Shop categories">
-        <button type="button" class="shop-tab active" data-tab="skins" role="tab" aria-selected="true">Skins (20)</button>
-        <button type="button" class="shop-tab" data-tab="maps" role="tab" aria-selected="false">Maps (20)</button>
-        <button type="button" class="shop-tab" data-tab="trails" role="tab" aria-selected="false">Trails (20)</button>
+        <button type="button" class="shop-tab active" data-tab="skins" role="tab" aria-selected="true">Character Skins</button>
+        <button type="button" class="shop-tab" data-tab="maps" role="tab" aria-selected="false">Maps</button>
+        <button type="button" class="shop-tab" data-tab="trails" role="tab" aria-selected="false">Light Trails</button>
         <button type="button" class="shop-tab" data-tab="stardust" role="tab" aria-selected="false">Stardust</button>
       </div>
-      <div id="shop-filters" class="shop-filters" role="toolbar" aria-label="Filter by rarity">
-        <button type="button" class="shop-filter active" data-rarity="all">All</button>
-        <button type="button" class="shop-filter" data-rarity="common">Common</button>
-        <button type="button" class="shop-filter" data-rarity="rare">Rare</button>
-        <button type="button" class="shop-filter" data-rarity="epic">Epic</button>
-        <button type="button" class="shop-filter" data-rarity="legendary">Legendary</button>
-      </div>
-      <p id="shop-hint" class="shop-hint">Grouped by rarity. Coins unlock Common–Epic. <strong>Stardust</strong> unlocks Legendaries only (earn 1 per 25 pipes, or buy packs in the Stardust tab). Trails equip independently of skins.</p>
+      <div id="shop-filters" class="shop-filters hidden" role="toolbar" aria-label="Filter by rarity" hidden></div>
+      <p id="shop-hint" class="shop-hint">Browse by category. Items are grouped into <strong>Legendary</strong>, <strong>Epic</strong>, <strong>Rare</strong>, and <strong>Common</strong> sections. Coins unlock Common–Epic; <strong>Stardust</strong> unlocks Legendaries.</p>
       <div id="shop-grid" class="shop-grid"></div>
     </div>
   </div>
