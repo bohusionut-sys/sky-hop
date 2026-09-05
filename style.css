@@ -569,13 +569,16 @@ body.playing .promo-banner {
 
 .shop-live {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
   padding: 8px;
   background: rgba(0, 0, 0, 0.22);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 5;
 }
 
 #shop-live-preview {
@@ -1475,13 +1478,71 @@ body.playing .promo-banner {
   gap: 8px;
 }
 
-.shop-music-preview-btn {
-  flex: 0 0 auto;
-  padding: 8px 12px !important;
-  font-size: 0.8rem !important;
-}
-
 #game {
   position: relative;
   z-index: 1;
+}
+
+.music-preview-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 10px;
+  background: rgba(14, 116, 144, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 12px;
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.music-preview-bar.hidden {
+  display: none !important;
+}
+
+.music-preview-bar-btn {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+  color: #082f49;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+}
+
+.music-preview-bar-btn:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.music-preview-status {
+  font-size: 0.75rem;
+  color: rgba(186, 230, 253, 0.9);
+  text-align: center;
+}
+
+.skin-btn.preview {
+  min-height: 40px;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  position: relative;
+  z-index: 2;
+}
+
+.skin-card,
+.skin-card.locked {
+  pointer-events: auto;
+}
+
+.skin-actions {
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
 }

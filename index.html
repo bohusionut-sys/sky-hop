@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Sky Hop</title>
-  <link rel="stylesheet" href="style.css?v=fix7" />
+  <link rel="stylesheet" href="style.css?v=fix8" />
 </head>
 <body>
   <div id="app">
@@ -166,8 +166,11 @@
         <canvas id="shop-live-preview" width="200" height="100" aria-hidden="true"></canvas>
         <div class="shop-live-meta">
           <p id="shop-preview-label" class="shop-preview-label">Preview</p>
-          <button type="button" id="shop-music-preview-btn" class="skin-btn preview shop-music-preview-btn hidden" aria-label="Preview selected music">▶ Preview track</button>
         </div>
+      </div>
+      <div id="music-preview-bar" class="music-preview-bar hidden" hidden>
+        <button type="button" id="shop-music-preview-btn" class="music-preview-bar-btn" aria-label="Preview selected music">▶ Preview selected track</button>
+        <p id="music-preview-status" class="music-preview-status">Tap a track, then Preview</p>
       </div>
       <div class="shop-tabs" role="tablist" aria-label="Shop categories">
         <button type="button" class="shop-tab active" data-tab="skins" role="tab" aria-selected="true">Character Skins</button>
@@ -209,6 +212,6 @@
     </div>
   </div>
 
-  <script src="game.js?v=fix7"></script>
+  <script src="game.js?v=fix8"></script>
 </body>
 </html>

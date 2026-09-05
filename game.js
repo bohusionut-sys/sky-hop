@@ -1454,6 +1454,23 @@
     musicEngine.previewing = false;
   }
 
+
+  function auditionMusicTrack(trackId, sourceLabel) {
+    const id = trackId || shopPreviewMusicId || equippedMusicId;
+    const track = MUSIC_BY_ID[id] || getEquippedMusic();
+    if (!track) return;
+    shopPreviewMusicId = track.id;
+    resumeMusicOnGesture();
+    // Force restart so repeated Preview taps always re-trigger audio
+    stopMusicLoop();
+    startMusicTrack(track.id, true);
+    updateShopLivePreview();
+    if (musicPreviewStatus) {
+      musicPreviewStatus.textContent = "Playing: " + track.name + (sourceLabel ? " (" + sourceLabel + ")" : "");
+    }
+    playSfx("ui");
+  }
+
   function startMusicTrack(trackId, asPreview) {
     const track = MUSIC_BY_ID[trackId] || getEquippedMusic();
     if (!track) return;
@@ -1973,6 +1990,8 @@
   const shopLivePreview = document.getElementById("shop-live-preview");
   const shopPreviewLabel = document.getElementById("shop-preview-label");
   const shopMusicPreviewBtn = document.getElementById("shop-music-preview-btn");
+  const musicPreviewBar = document.getElementById("music-preview-bar");
+  const musicPreviewStatus = document.getElementById("music-preview-status");
   const adOverlay = document.getElementById("ad-overlay");
   const adCountdown = document.getElementById("ad-countdown");
   const adContinue = document.getElementById("ad-continue");
@@ -2607,8 +2626,12 @@
       shopFiltersEl.hidden = true;
     }
     if (shopLiveEl) shopLiveEl.classList.toggle("hidden", isCurrencyTab);
+    const showMusicPreview = !isCurrencyTab && shopTab === "music";
+    if (musicPreviewBar) {
+      musicPreviewBar.classList.toggle("hidden", !showMusicPreview);
+      musicPreviewBar.hidden = !showMusicPreview;
+    }
     if (shopMusicPreviewBtn) {
-      const showMusicPreview = !isCurrencyTab && shopTab === "music";
       shopMusicPreviewBtn.classList.toggle("hidden", !showMusicPreview);
       shopMusicPreviewBtn.hidden = !showMusicPreview;
     }
@@ -2724,9 +2747,8 @@
         shopPreviewTrailId = item.id;
         shopTrailPoints = [];
       } else if (isMusic) {
-        shopPreviewMusicId = item.id;
-        resumeMusicOnGesture();
-        startMusicTrack(item.id, true);
+        auditionMusicTrack(item.id, "select");
+        return;
       } else shopPreviewSkinId = item.id;
       updateShopLivePreview();
     };
@@ -2736,15 +2758,16 @@
       const previewBtn = document.createElement("button");
       previewBtn.type = "button";
       previewBtn.className = "skin-btn preview";
-      previewBtn.textContent = "Preview";
-      previewBtn.addEventListener("click", (e) => {
+      previewBtn.textContent = "▶ Preview";
+      const playThis = (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        shopPreviewMusicId = item.id;
-        resumeMusicOnGesture();
-        startMusicTrack(item.id, true);
-        updateShopLivePreview();
-        playSfx("ui");
-      });
+        if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+        auditionMusicTrack(item.id, "button");
+      };
+      previewBtn.addEventListener("click", playThis);
+      previewBtn.addEventListener("touchend", playThis, { passive: false });
+      previewBtn.addEventListener("pointerup", playThis);
       actions.appendChild(previewBtn);
     }
 
@@ -2939,15 +2962,15 @@
     openShop();
   });
   if (shopMusicPreviewBtn) {
-    shopMusicPreviewBtn.addEventListener("click", (e) => {
+    const playSelected = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const id = shopPreviewMusicId || equippedMusicId;
-      resumeMusicOnGesture();
-      startMusicTrack(id, true);
-      updateShopLivePreview();
-      playSfx("ui");
-    });
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      auditionMusicTrack(shopPreviewMusicId || equippedMusicId, "bar");
+    };
+    shopMusicPreviewBtn.addEventListener("click", playSelected);
+    shopMusicPreviewBtn.addEventListener("touchend", playSelected, { passive: false });
+    shopMusicPreviewBtn.addEventListener("pointerup", playSelected);
   }
   shopClose.addEventListener("click", closeShop);
   shopModal.addEventListener("click", (e) => {
