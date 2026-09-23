@@ -5,7 +5,7 @@
 **Store copy:** [STORE_LISTING.md](./STORE_LISTING.md)  
 **Android notes:** [ANDROID.md](./ANDROID.md)
 
-Ruthless split: **DONE in repo** vs **ONLY you / Play Console**.
+Ruthless split: **DONE in repo + on agent box (JDK/SDK/AAB)** vs **ONLY Play Console / Google login gates**.
 
 ---
 
@@ -28,39 +28,49 @@ Ruthless split: **DONE in repo** vs **ONLY you / Play Console**.
 | `STORE_LISTING.md` short/full description drafts | ✅ |
 | Play store graphics (original Coral Hopper art) | ✅ see **Store graphics** below |
 | `npm install` / `npm run build:web` / `npx cap sync` | ✅ verified on agent box 2026-09-23 |
-| Release signing hooks in `android/app/build.gradle` via `keystore.properties` | ✅ template ready |
+| Release signing hooks in `android/app/build.gradle` via `keystore.properties` | ✅ wired; box has gitignored `keystore.properties` |
+| Signed `app-release.aab` on agent box | ✅ ~6.7MB; jarsigner verified 2026-09-23 |
 | Windows scripts: `scripts/create-release-keystore.ps1`, `scripts/assemble-release-aab.ps1` | ✅ |
 | Linux/macOS: `scripts/assemble-release-aab.sh`, portable `scripts/setup-capacitor.sh` | ✅ |
 | `.gitignore` blocks `*.keystore`, `*.jks`, `android/keystore.properties` | ✅ |
 
-### Box blockers (agent could not finish locally)
+### Box build status (agent Linux box — verified 2026-09-23)
 
-| Blocker | Detail |
-|---------|--------|
-| **No JDK** | `java` / `keytool` missing on shared Linux box → cannot generate keystore or run Gradle |
-| **No Android SDK** | `ANDROID_HOME` empty → cannot `bundleRelease` |
-| **Windows machine offline** | Registered machine `AlexBohus` was disconnected — cannot run scripts there remotely |
+| Item | Status |
+|------|--------|
+| **JDK 21** | ✅ present (`openjdk 21` / `java` + `keytool`) |
+| **Android SDK** | ✅ `ANDROID_HOME=/home/box/android-sdk` (build-tools, platforms, cmdline-tools) |
+| **Release keystore** | ✅ local only at `/home/box/sky-hop-secrets/skyhop-release.keystore` (gitignored; never commit) |
+| **`android/keystore.properties`** | ✅ present on box, gitignored |
+| **Signed release AAB** | ✅ `android/app/build/outputs/bundle/release/app-release.aab` (~6.7MB); jarsigner: **jar verified** (self-signed upload key expected). Mirror: `/home/box/sky-hop-secrets/app-release.aab` |
+| **`npx cap sync android`** | ✅ re-confirmed 2026-09-23 |
+| **Windows machine `AlexBohus`** | ⚪ optional / currently offline — not required while box can build & sign |
 
 **Secrets location (local only, not in GitHub):** `/home/box/sky-hop-secrets/SECRETS.md`  
-Fill passwords there after you generate the keystore on Windows. **Never commit that file.**
+**Never commit** keystore, `keystore.properties`, passwords, or AAB binaries.
 
-**AAB path (once you build on Windows):**  
-`android\app\build\outputs\bundle\release\app-release.aab`
+**Rebuild on this box (if AAB missing):**
+```bash
+npm install && npm run build:web && npx cap sync android
+./scripts/assemble-release-aab.sh
+```
 
 ---
 
-## ONLY YOU — machine (before Console upload)
+## ONLY YOU — optional Windows rebuild
 
-1. Install **Android Studio** (Ladybug+) + **JDK 21** + accept SDK licenses.
+Windows machine is **optional** now that the agent box has JDK + SDK + a signed AAB. Use only if you prefer building on Windows:
+
+1. Install **Android Studio** (Ladybug+) + **JDK 21** + accept SDK licenses (if not already).
 2. Clone/pull `main`, open PowerShell in repo root:
    ```powershell
    npm install
    npm run cap:sync
-   .\scripts\create-release-keystore.ps1
+   .\scripts\create-release-keystore.ps1   # only if you need a *new* keystore — prefer the existing box keystore backup
    # back up keystore + passwords offline / into password manager
    .\scripts\assemble-release-aab.ps1
    ```
-3. Confirm AAB exists at path above.
+3. Confirm AAB at `android\app\build\outputs\bundle\release\app-release.aab`.
 4. Upload store graphics from `store-assets/` (already generated — see **Store graphics** below). Optional: re-capture live device screenshots later.
 
 ---
@@ -228,4 +238,4 @@ npm install && npm run cap:sync
 
 ---
 
-*Generated for Play upload readiness. Code/docs/store graphics are ready; signing keystore + Console forms remain human gates.*
+*Updated 2026-09-23: box JDK/SDK/signed AAB are DONE. Remaining gates are Play Console session (login/2FA/create app / App content / Data safety / IAPs / AAB upload).*
