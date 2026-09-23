@@ -26,6 +26,7 @@ Ruthless split: **DONE in repo** vs **ONLY you / Play Console**.
 | Permissions: `INTERNET`, `AD_ID`, `BILLING` in app manifest | ✅ |
 | Privacy policy HTML + GitHub Pages URL | ✅ live |
 | `STORE_LISTING.md` short/full description drafts | ✅ |
+| Play store graphics (original Coral Hopper art) | ✅ see **Store graphics** below |
 | `npm install` / `npm run build:web` / `npx cap sync` | ✅ verified on agent box 2026-09-23 |
 | Release signing hooks in `android/app/build.gradle` via `keystore.properties` | ✅ template ready |
 | Windows scripts: `scripts/create-release-keystore.ps1`, `scripts/assemble-release-aab.ps1` | ✅ |
@@ -60,7 +61,7 @@ Fill passwords there after you generate the keystore on Windows. **Never commit 
    .\scripts\assemble-release-aab.ps1
    ```
 3. Confirm AAB exists at path above.
-4. Capture Play screenshots + create **512×512** icon + **1024×500** feature graphic (not in repo — see STORE_LISTING.md).
+4. Upload store graphics from `store-assets/` (already generated — see **Store graphics** below). Optional: re-capture live device screenshots later.
 
 ---
 
@@ -80,7 +81,7 @@ Fill passwords there after you generate the keystore on Windows. **Never commit 
 
 - Short description (≤80): use the draft in STORE_LISTING.md
 - Full description: paste from STORE_LISTING.md
-- App icon 512×512, feature graphic 1024×500, phone screenshots (portrait)
+- App icon 512×512, feature graphic 1024×500, phone screenshots (portrait) — files in `store-assets/`
 - Category: **Games → Arcade** (alt Casual)
 - Contact email: your publisher email
 - **Privacy policy URL:** `https://bohusionut-sys.github.io/sky-hop/privacy.html`
@@ -174,6 +175,27 @@ License testers: add your Google accounts under Setup → License testing.
 
 ---
 
+
+---
+
+## Store graphics (ready to upload)
+
+Original art only — exported from Sky Hop’s Coral Hopper bird / coral map palette via `scripts/store-gen/export.html` (regenerate with `./scripts/generate-store-assets.sh`).
+
+**In repo (commit these):**
+
+| Play field | Path |
+|------------|------|
+| High-res icon 512×512 | [`store-assets/icon-512.png`](./store-assets/icon-512.png) |
+| Feature graphic 1024×500 | [`store-assets/feature-1024x500.png`](./store-assets/feature-1024x500.png) |
+| Phone screenshot 1 (ready) | [`store-assets/phone-screenshot-01-ready.png`](./store-assets/phone-screenshot-01-ready.png) |
+| Phone screenshot 2 (playing) | [`store-assets/phone-screenshot-02-playing.png`](./store-assets/phone-screenshot-02-playing.png) |
+| Phone screenshot 3 (game over) | [`store-assets/phone-screenshot-03-gameover.png`](./store-assets/phone-screenshot-03-gameover.png) |
+
+**Local mirror (not in git):** `/home/box/sky-hop-secrets/store-assets/` (same PNGs for Console upload from the agent box).
+
+Also documented in [`store-assets/README.md`](./store-assets/README.md).
+
 ## Quick verify matrix (after first internal build)
 
 | Check | Pass? |
@@ -206,4 +228,4 @@ npm install && npm run cap:sync
 
 ---
 
-*Generated for Play upload readiness. Code/docs are ready; signing keystore + Console forms + graphics are the remaining human gates.*
+*Generated for Play upload readiness. Code/docs/store graphics are ready; signing keystore + Console forms remain human gates.*

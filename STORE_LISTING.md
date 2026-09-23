@@ -60,7 +60,9 @@ Capture on a mid-size phone frame (or emulator) at Play’s required resolution.
 
 Optional extras: Stardust tab with packs; Challenges page; No Ads page.
 
-## Graphic assets still needed (not in this doc)
-- High-res icon (512×512)
-- Feature graphic (1024×500)
-- Optional promo video
+## Graphic assets
+Ready in [`store-assets/`](./store-assets/) (original Coral Hopper art):
+- High-res icon: `store-assets/icon-512.png` (512×512)
+- Feature graphic: `store-assets/feature-1024x500.png` (1024×500)
+- Phone screenshots: `store-assets/phone-screenshot-01-ready.png`, `…-02-playing.png`, `…-03-gameover.png` (1080×1920)
+- Optional promo video: still optional / not generated

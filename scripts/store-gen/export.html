@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sky Hop store export</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+/** Original Sky Hop store-asset exporter — draws from in-game Coral Hopper palette & bird geometry. */
+(function () {
+  const params = new URLSearchParams(location.search);
+  const asset = params.get("asset") || "icon";
+
+  const CORAL_SKIN = {
+    id: "coral",
+    body: "#e76f51",
+    belly: "#f4a261",
+    wing: "#c44536",
+    beak: "#f4d35e",
+    eye: "#1a1a2e",
+    crest: "#9b2226",
+    accent: "#e9c46a",
+    accessory: "crest",
+    trailColor: "#e9c46a",
+    trailAccent: "#f4a261",
+  };
+
+  const NEON_SKIN = {
+    id: "neon",
+    body: "#1b1030",
+    belly: "#ff2bd6",
+    wing: "#00f0ff",
+    beak: "#b8f7ff",
+    eye: "#00f0ff",
+    crest: "#ff2bd6",
+    accent: "#00f0ff",
+    accessory: "visor",
+    glow: "#ff2bd6",
+    trailColor: "#ff2bd6",
+    trailAccent: "#00f0ff",
+  };
+
+  const MAP = {
+    skyTop: "#4a9fd8",
+    skyBot: "#b8e4f8",
+    cloud: "rgba(255,255,255,0.55)",
+    ground: "#3d8b5a",
+    groundDark: "#2f6b45",
+    dirt: "#8b6914",
+    dirtDark: "#6b5010",
+    pipe: "#2a9d8f",
+    pipeDark: "#1d7a6f",
+    pipeRim: "#e9c46a",
+    pipeHighlight: "#40c4b0",
+    hill1: "rgba(45,120,90,0.35)",
+    hill2: "rgba(35,100,75,0.4)",
+    sun: "rgba(255,236,179,0.85)",
+    sunGlow: "rgba(255,220,140,0.2)",
+  };
+
+  const UI = {
+    hud: "#fff",
+    hudShadow: "rgba(0,0,0,0.35)",
+    panel: "rgba(15, 23, 42, 0.72)",
+    accent: "#e9c46a",
+    coin: "#f4d35e",
+    stardust: "#c084fc",
+  };
+
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+
+  function drawAccessory(c, skin, r) {
+    const acc = skin.accessory;
+    if (acc === "crest" || !acc) {
+      c.fillStyle = skin.crest;
+      c.beginPath();
+      c.moveTo(-4, -r + 2);
+      c.quadraticCurveTo(-2, -r - 10, 6, -r - 2);
+      c.quadraticCurveTo(2, -r - 4, -2, -r + 4);
+      c.fill();
+      return;
+    }
+    if (acc === "visor") {
+      // crest not used; visor drawn with eye
+      c.fillStyle = skin.crest;
+      c.beginPath();
+      c.moveTo(-3, -r + 2);
+      c.quadraticCurveTo(0, -r - 8, 5, -r);
+      c.quadraticCurveTo(1, -r - 2, -1, -r + 3);
+      c.fill();
+    }
+  }
+
+  function drawBirdOn(c, skin, wingAngle) {
+    const r = 14;
+    c.save();
+    if (skin.glow) {
+      c.shadowColor = skin.glow;
+      c.shadowBlur = 14;
+    }
+    c.fillStyle = "rgba(0,0,0,0.18)";
+    c.beginPath();
+    c.ellipse(2, r + 4, r * 0.9, 4, 0, 0, Math.PI * 2);
+    c.fill();
+
+    c.fillStyle = skin.body;
+    c.beginPath();
+    c.ellipse(0, 0, r + 2, r, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = skin.belly;
+    c.beginPath();
+    c.ellipse(2, 4, r * 0.7, r * 0.65, -0.2, 0, Math.PI * 2);
+    c.fill();
+    c.shadowBlur = 0;
+
+    drawAccessory(c, skin, r);
+
+    c.save();
+    c.translate(-2, 2);
+    c.rotate(wingAngle != null ? wingAngle : 0.25);
+    c.fillStyle = skin.wing;
+    c.beginPath();
+    c.ellipse(-4, 0, 10, 7, 0.1, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "rgba(255,255,255,0.2)";
+    c.beginPath();
+    c.ellipse(-5, -2, 5, 3, 0.1, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+
+    if (skin.accessory === "visor") {
+      c.fillStyle = skin.eye;
+      c.fillRect(4, -7, 12, 6);
+      c.fillStyle = "rgba(255,255,255,0.35)";
+      c.fillRect(5, -6, 4, 2);
+    } else {
+      c.fillStyle = "#fff";
+      c.beginPath();
+      c.ellipse(8, -4, 5.5, 5.5, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = skin.eye;
+      c.beginPath();
+      c.arc(10, -4, 2.6, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = "#fff";
+      c.beginPath();
+      c.arc(11, -5.2, 1, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    c.fillStyle = skin.beak;
+    c.beginPath();
+    c.moveTo(12, 0);
+    c.lineTo(22, 2);
+    c.lineTo(12, 5);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = "rgba(0,0,0,0.2)";
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(12, 2.5);
+    c.lineTo(20, 2.5);
+    c.stroke();
+
+    if (skin.accessory !== "ghost") {
+      c.fillStyle = "rgba(255, 150, 140, 0.35)";
+      c.beginPath();
+      c.ellipse(4, 2, 3, 2, 0, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.restore();
+  }
+
+  function drawCloud(c, C, W, x, y, s) {
+    const xx = x;
+    c.fillStyle = C.cloud;
+    c.beginPath();
+    c.ellipse(xx, y, 28 * s, 16 * s, 0, 0, Math.PI * 2);
+    c.ellipse(xx + 22 * s, y + 4, 22 * s, 14 * s, 0, 0, Math.PI * 2);
+    c.ellipse(xx - 20 * s, y + 6, 20 * s, 12 * s, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  function drawPipeSegment(c, C, x, y, w, h, isTop) {
+    if (h <= 0) return;
+    const bodyG = c.createLinearGradient(x, 0, x + w, 0);
+    bodyG.addColorStop(0, C.pipeDark);
+    bodyG.addColorStop(0.25, C.pipeHighlight);
+    bodyG.addColorStop(0.55, C.pipe);
+    bodyG.addColorStop(1, C.pipeDark);
+    c.fillStyle = bodyG;
+    c.fillRect(x + 4, y, w - 8, h);
+
+    const rimH = 22;
+    const rimExpand = 6;
+    const rimY = isTop ? y + h - rimH : y;
+    const rimG = c.createLinearGradient(x - rimExpand, 0, x + w + rimExpand, 0);
+    rimG.addColorStop(0, C.pipeDark);
+    rimG.addColorStop(0.3, C.pipeHighlight);
+    rimG.addColorStop(0.7, C.pipe);
+    rimG.addColorStop(1, C.pipeDark);
+    c.fillStyle = rimG;
+    roundRect(c, x - rimExpand, rimY, w + rimExpand * 2, rimH, 4);
+    c.fill();
+
+    c.fillStyle = C.pipeRim;
+    c.fillRect(x - rimExpand + 2, rimY + 4, w + rimExpand * 2 - 4, 4);
+    c.fillStyle = "rgba(255,255,255,0.25)";
+    c.fillRect(x - rimExpand + 2, rimY + 4, w + rimExpand * 2 - 4, 1.5);
+  }
+
+  function drawScene(c, W, H, opts) {
+    const C = Object.assign({}, MAP);
+    const GROUND_H = 96;
+    const PIPE_WIDTH = 56;
+    const skyOffset = opts.skyOffset || 40;
+    const groundOffset = opts.groundOffset || 12;
+    const pipes = opts.pipes || [];
+    const score = opts.score != null ? opts.score : 12;
+    const best = opts.best != null ? opts.best : 27;
+    const mode = opts.mode || "ready"; // ready | playing | over
+    const skin = opts.skin || CORAL_SKIN;
+    const birdX = opts.birdX != null ? opts.birdX : 88;
+    const birdY = opts.birdY != null ? opts.birdY : H * 0.42;
+    const birdRot = opts.birdRot || -0.15;
+    const wing = opts.wing != null ? opts.wing : -0.55;
+    const trail = opts.trail !== false;
+
+    // sky
+    const g = c.createLinearGradient(0, 0, 0, H - GROUND_H);
+    g.addColorStop(0, C.skyTop);
+    g.addColorStop(1, C.skyBot);
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+
+    c.beginPath();
+    c.arc(W - 70, 70, 36, 0, Math.PI * 2);
+    c.fillStyle = C.sun;
+    c.fill();
+    c.beginPath();
+    c.arc(W - 70, 70, 52, 0, Math.PI * 2);
+    c.fillStyle = C.sunGlow;
+    c.fill();
+
+    drawCloud(c, C, W, 40 - skyOffset * 0.6, 90, 1.1);
+    drawCloud(c, C, W, 180 - skyOffset * 0.45, 140, 0.85);
+    drawCloud(c, C, W, 300 - skyOffset * 0.55, 70, 1.0);
+
+    // hills
+    const base = H - GROUND_H;
+    c.fillStyle = C.hill1;
+    c.beginPath();
+    c.moveTo(0, base);
+    for (let x = 0; x <= W; x += 20) {
+      const y = base - 40 - Math.sin((x + skyOffset * 0.2) * 0.02) * 18;
+      c.lineTo(x, y);
+    }
+    c.lineTo(W, base);
+    c.closePath();
+    c.fill();
+
+    c.fillStyle = C.hill2;
+    c.beginPath();
+    c.moveTo(0, base);
+    for (let x = 0; x <= W; x += 16) {
+      const y = base - 22 - Math.sin((x + skyOffset * 0.35) * 0.035 + 1) * 12;
+      c.lineTo(x, y);
+    }
+    c.lineTo(W, base);
+    c.closePath();
+    c.fill();
+
+    // pipes
+    for (const p of pipes) {
+      const gapTop = p.top;
+      const gapBot = p.top + p.gap;
+      const floorY = H - GROUND_H;
+      drawPipeSegment(c, C, p.x, 0, PIPE_WIDTH, gapTop, true);
+      drawPipeSegment(c, C, p.x, gapBot, PIPE_WIDTH, floorY - gapBot, false);
+    }
+
+    // ground
+    const gy = H - GROUND_H;
+    c.fillStyle = C.dirt;
+    c.fillRect(0, gy + 22, W, GROUND_H - 22);
+    const gg = c.createLinearGradient(0, gy, 0, gy + 28);
+    gg.addColorStop(0, C.ground);
+    gg.addColorStop(1, C.groundDark);
+    c.fillStyle = gg;
+    c.fillRect(0, gy, W, 28);
+    c.fillStyle = C.ground;
+    for (let x = -groundOffset; x < W + 48; x += 24) {
+      c.beginPath();
+      c.moveTo(x, gy + 14);
+      c.lineTo(x + 8, gy + 2);
+      c.lineTo(x + 16, gy + 14);
+      c.fill();
+    }
+    c.fillStyle = C.dirtDark;
+    for (let x = -groundOffset * 0.5; x < W + 40; x += 40) {
+      c.fillRect(x + 6, gy + 40, 6, 4);
+      c.fillRect(x + 22, gy + 58, 8, 3);
+      c.fillRect(x + 10, gy + 72, 5, 4);
+    }
+    c.fillStyle = "rgba(255,255,255,0.25)";
+    c.fillRect(0, gy, W, 2);
+
+    // trail
+    if (trail && mode === "playing") {
+      const cols = [skin.trailColor, skin.trailAccent];
+      for (let i = 0; i < 8; i++) {
+        const t = i / 8;
+        c.globalAlpha = 0.15 + (1 - t) * 0.45;
+        c.fillStyle = cols[i % 2];
+        c.beginPath();
+        c.arc(birdX - 12 - i * 10, birdY + Math.sin(i) * 4, 4 - t * 2.5, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+
+    // bird
+    c.save();
+    c.translate(birdX, birdY);
+    c.rotate(birdRot);
+    drawBirdOn(c, skin, wing);
+    c.restore();
+
+    // HUD overlays
+    c.textAlign = "center";
+    if (mode === "playing" || mode === "over") {
+      c.font = "bold 42px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = UI.hudShadow;
+      c.fillText(String(score), W / 2 + 2, 58 + 2);
+      c.fillStyle = UI.hud;
+      c.fillText(String(score), W / 2, 58);
+    }
+
+    if (mode === "ready") {
+      c.font = "bold 44px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = UI.hudShadow;
+      c.fillText("Sky Hop", W / 2 + 2, 178 + 2);
+      c.fillStyle = UI.accent;
+      c.fillText("Sky Hop", W / 2, 178);
+      c.font = "600 16px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = "rgba(255,255,255,0.9)";
+      c.fillText("Tap · Click · Space · ↑", W / 2, 216);
+
+      const pw = 220, ph = 70;
+      const px = (W - pw) / 2, py = H * 0.58;
+      c.fillStyle = UI.panel;
+      roundRect(c, px, py, pw, ph, 12);
+      c.fill();
+      c.strokeStyle = "rgba(233,196,106,0.45)";
+      c.lineWidth = 2;
+      roundRect(c, px, py, pw, ph, 12);
+      c.stroke();
+      c.fillStyle = "#fff";
+      c.font = "600 18px Segoe UI, system-ui, sans-serif";
+      c.fillText("Tap to start", W / 2, py + 30);
+      c.font = "14px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = "rgba(255,255,255,0.7)";
+      c.fillText("Best: " + best, W / 2, py + 52);
+    }
+
+    if (mode === "over") {
+      const pw = 250, ph = 268;
+      const px = (W - pw) / 2, py = H * 0.22;
+      c.fillStyle = UI.panel;
+      roundRect(c, px, py, pw, ph, 14);
+      c.fill();
+      c.strokeStyle = "rgba(233,196,106,0.5)";
+      c.lineWidth = 2;
+      roundRect(c, px, py, pw, ph, 14);
+      c.stroke();
+      c.font = "bold 28px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = UI.accent;
+      c.fillText("Game Over", W / 2, py + 34);
+      c.font = "16px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = "rgba(255,255,255,0.85)";
+      c.fillText("Score  " + score, W / 2, py + 64);
+      c.fillText("Best   " + best, W / 2, py + 86);
+      c.fillStyle = UI.coin;
+      c.fillText("Coins +" + (opts.coinsEarned || 18), W / 2, py + 112);
+      c.fillStyle = UI.stardust;
+      c.fillText("Stardust +" + (opts.stardustEarned || 1), W / 2, py + 134);
+      c.font = "12px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = "rgba(255,255,255,0.55)";
+      c.fillText("Bag " + (opts.coins || 240) + " · Stardust " + (opts.stardust || 6), W / 2, py + 156);
+      const rw = 200, rh = 36;
+      const rx = (W - rw) / 2, ry = py + 178;
+      c.fillStyle = "rgba(192,132,252,0.95)";
+      roundRect(c, rx, ry, rw, rh, 10);
+      c.fill();
+      c.font = "600 14px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = "#1e1030";
+      c.fillText("Watch · Revive", W / 2, ry + 24);
+      c.font = "600 15px Segoe UI, system-ui, sans-serif";
+      c.fillStyle = "#fff";
+      c.fillText("or tap to retry", W / 2, ry + rh + 22);
+    }
+
+    // fake HTML HUD chrome for phone shots
+    if (opts.showChrome) {
+      // coin / stardust pills
+      c.save();
+      c.textAlign = "left";
+      // Shop button
+      c.fillStyle = "rgba(15,23,42,0.78)";
+      roundRect(c, 10, 10, 64, 28, 8);
+      c.fill();
+      c.fillStyle = "#fff";
+      c.font = "600 13px Segoe UI, system-ui, sans-serif";
+      c.fillText("Shop", 26, 29);
+
+      roundRect(c, W - 78, 10, 68, 26, 8);
+      c.fillStyle = "rgba(15,23,42,0.78)";
+      roundRect(c, W - 78, 10, 68, 26, 8);
+      c.fill();
+      c.fillStyle = UI.coin;
+      c.beginPath();
+      c.arc(W - 64, 23, 7, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = "#fff";
+      c.font = "600 12px Segoe UI, system-ui, sans-serif";
+      c.fillText(String(opts.coins || 240), W - 52, 27);
+
+      if (mode === "ready") {
+        const labels = [
+          [10, 48, "★ Rank"],
+          [10, 86, "Settings"],
+          [10, 124, "Challenges"],
+        ];
+        for (const [x, y, t] of labels) {
+          c.fillStyle = "rgba(15,23,42,0.78)";
+          roundRect(c, x, y, 90, 28, 8);
+          c.fill();
+          c.fillStyle = "#fff";
+          c.font = "600 12px Segoe UI, system-ui, sans-serif";
+          c.fillText(t, x + 10, y + 18);
+        }
+        c.fillStyle = "rgba(233,196,106,0.92)";
+        roundRect(c, W - 78, 48, 68, 28, 8);
+        c.fill();
+        c.fillStyle = "#1e293b";
+        c.font = "700 11px Segoe UI, system-ui, sans-serif";
+        c.fillText("No Ads", W - 64, 66);
+      }
+      c.restore();
+    }
+  }
+
+  function drawIcon512(c) {
+    const S = 512;
+    // sky gradient bg
+    const g = c.createLinearGradient(0, 0, 0, S);
+    g.addColorStop(0, "#3d8ec8");
+    g.addColorStop(0.55, "#7ec8ef");
+    g.addColorStop(1, "#b8e4f8");
+    c.fillStyle = g;
+    c.fillRect(0, 0, S, S);
+
+    // soft sun
+    c.fillStyle = "rgba(255,236,179,0.9)";
+    c.beginPath();
+    c.arc(400, 110, 70, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "rgba(255,220,140,0.25)";
+    c.beginPath();
+    c.arc(400, 110, 110, 0, Math.PI * 2);
+    c.fill();
+
+    // cloud accents
+    c.fillStyle = "rgba(255,255,255,0.55)";
+    c.beginPath();
+    c.ellipse(90, 400, 70, 28, 0, 0, Math.PI * 2);
+    c.ellipse(140, 410, 55, 24, 0, 0, Math.PI * 2);
+    c.ellipse(50, 412, 45, 20, 0, 0, Math.PI * 2);
+    c.fill();
+
+    // bird large
+    c.save();
+    c.translate(S / 2 - 10, S / 2 + 10);
+    c.scale(7.2, 7.2);
+    c.rotate(-0.12);
+    drawBirdOn(c, CORAL_SKIN, -0.55);
+    c.restore();
+
+    // subtle rim for Play icon clarity
+    c.strokeStyle = "rgba(255,255,255,0.35)";
+    c.lineWidth = 8;
+    c.strokeRect(4, 4, S - 8, S - 8);
+  }
+
+  function drawFeature(c) {
+    const W = 1024, H = 500;
+    const g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#2f7fb8");
+    g.addColorStop(0.5, "#6bb8e8");
+    g.addColorStop(1, "#a8daf5");
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+
+    c.fillStyle = "rgba(255,236,179,0.85)";
+    c.beginPath();
+    c.arc(880, 90, 55, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "rgba(255,220,140,0.22)";
+    c.beginPath();
+    c.arc(880, 90, 90, 0, Math.PI * 2);
+    c.fill();
+
+    // pipes mid-ground
+    drawPipeSegment(c, MAP, 620, 0, 70, 160, true);
+    drawPipeSegment(c, MAP, 620, 300, 70, 200, false);
+    drawPipeSegment(c, MAP, 780, 0, 70, 120, true);
+    drawPipeSegment(c, MAP, 780, 260, 70, 240, false);
+
+    // hills strip
+    c.fillStyle = "rgba(45,120,90,0.35)";
+    c.beginPath();
+    c.moveTo(0, H);
+    for (let x = 0; x <= W; x += 24) {
+      c.lineTo(x, H - 70 - Math.sin(x * 0.015) * 18);
+    }
+    c.lineTo(W, H);
+    c.fill();
+    c.fillStyle = MAP.ground;
+    c.fillRect(0, H - 48, W, 48);
+
+    // title + bird
+    c.save();
+    c.translate(210, 270);
+    c.scale(6.5, 6.5);
+    c.rotate(-0.18);
+    drawBirdOn(c, CORAL_SKIN, -0.65);
+    c.restore();
+
+    // neon accent bird small
+    c.save();
+    c.translate(430, 160);
+    c.scale(3.2, 3.2);
+    c.rotate(0.25);
+    drawBirdOn(c, NEON_SKIN, 0.35);
+    c.restore();
+
+    c.textAlign = "left";
+    c.font = "bold 92px Segoe UI, system-ui, sans-serif";
+    c.fillStyle = "rgba(0,0,0,0.28)";
+    c.fillText("Sky Hop", 52, 132);
+    c.fillStyle = "#e9c46a";
+    c.fillText("Sky Hop", 48, 128);
+    c.font = "600 28px Segoe UI, system-ui, sans-serif";
+    c.fillStyle = "rgba(255,255,255,0.92)";
+    c.fillText("Tap to hop · Unlock skins, maps & trails", 52, 178);
+  }
+
+  function renderPhone(mode) {
+    // Native game resolution; upscale later for Play (avoids headless GPU OOM)
+    const W = 360, H = 640;
+    canvas.width = W;
+    canvas.height = H;
+    document.body.style.width = W + "px";
+    document.body.style.height = H + "px";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    const pipesPlaying = [
+      { x: 200, top: 140, gap: 128 },
+      { x: 340, top: 220, gap: 120 },
+    ];
+    const pipesReady = [
+      { x: 240, top: 160, gap: 128 },
+    ];
+    const pipesOver = [
+      { x: 180, top: 120, gap: 128 },
+      { x: 320, top: 200, gap: 118 },
+    ];
+
+    if (mode === "ready") {
+      drawScene(ctx, W, H, {
+        mode: "ready",
+        showChrome: true,
+        pipes: pipesReady,
+        birdY: H * 0.4,
+        birdRot: -0.08,
+        wing: 0.3,
+        trail: false,
+        best: 27,
+        coins: 240,
+      });
+    } else if (mode === "playing") {
+      drawScene(ctx, W, H, {
+        mode: "playing",
+        showChrome: true,
+        pipes: pipesPlaying,
+        birdX: 100,
+        birdY: 280,
+        birdRot: -0.25,
+        wing: -0.7,
+        score: 14,
+        coins: 240,
+        trail: true,
+      });
+    } else {
+      drawScene(ctx, W, H, {
+        mode: "over",
+        showChrome: true,
+        pipes: pipesOver,
+        birdX: 90,
+        birdY: 420,
+        birdRot: 0.9,
+        wing: 0.4,
+        score: 14,
+        best: 27,
+        coinsEarned: 18,
+        stardustEarned: 1,
+        coins: 258,
+        stardust: 7,
+        trail: false,
+      });
+    }
+  }
+
+  if (asset === "icon") {
+    canvas.width = 512;
+    canvas.height = 512;
+    document.body.style.width = "512px";
+    document.body.style.height = "512px";
+    drawIcon512(ctx);
+  } else if (asset === "feature") {
+    canvas.width = 1024;
+    canvas.height = 500;
+    document.body.style.width = "1024px";
+    document.body.style.height = "500px";
+    drawFeature(ctx);
+  } else if (asset === "phone-ready") {
+    renderPhone("ready");
+  } else if (asset === "phone-playing") {
+    renderPhone("playing");
+  } else if (asset === "phone-over") {
+    renderPhone("over");
+  } else {
+    canvas.width = 512;
+    canvas.height = 512;
+    drawIcon512(ctx);
+  }
+
+  document.title = "ready:" + asset;
+})();
+</script>
+</body>
+</html>
