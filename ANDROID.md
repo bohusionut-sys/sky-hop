@@ -44,7 +44,7 @@ Then:
 npm run cap:sync
 ```
 
-This copies `index.html`, `game.js`, `style.css` → `www/` and runs `cap sync`.
+This copies `index.html`, `game.js`, `style.css`, `ad-config.js`, `billing.js`, `privacy.html` → `www/` and runs `cap sync`.
 
 ## Play Console (high level)
 
@@ -86,9 +86,12 @@ Product IDs: `skyhop_remove_ads`, `skyhop_stardust_5/_15/_40/_80/_150/_300` via 
 
 ## Remaining checklist
 
-1. Payments approved → create Play app `com.skyhop.game`
-2. Privacy URL + STORE_LISTING + rating + Data safety + ads declaration
-3. Create IAP products
-4. Signed AAB → internal testing (interstitial, rewarded, billing)
-5. Closed testing / 12 testers if still required → production
+See **[PLAY_SHIP.md](./PLAY_SHIP.md)** for the ruthless DONE vs Console-only checklist, IAP GBP table, Data safety answers, content rating answers, and Windows AAB scripts.
+
+Quick Windows release:
+
+```powershell
+.\scripts\create-release-keystore.ps1
+.\scripts\assemble-release-aab.ps1
+```
 

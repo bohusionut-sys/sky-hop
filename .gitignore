@@ -23,3 +23,6 @@ android/.cxx/
 
 # Capacitor generated
 .capacitor/
+android/keystore.properties
+**/skyhop-release.keystore
+.cap-android-status
