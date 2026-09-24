@@ -48,7 +48,7 @@ This copies `index.html`, `game.js`, `style.css`, `ad-config.js`, `billing.js`, 
 
 ## Play Console (high level)
 
-1. Create app in [Google Play Console](https://play.google.com/console) — package **`com.skyhop.game`**
+1. Create app in [Google Play Console](https://play.google.com/console) — package **`com.baigames.skyhop`**
 2. In Android Studio: **Build → Generate Signed App Bundle / APK** → Android App Bundle (`.aab`)
 3. Create an upload keystore (keep it safe; do not commit `*.jks` / `*.keystore`)
 4. Complete store listing, content rating, Privacy Policy URL, target audience
@@ -58,7 +58,7 @@ This copies `index.html`, `game.js`, `style.css`, `ad-config.js`, `billing.js`, 
 
 | Key | Value |
 |-----|--------|
-| appId | `com.skyhop.game` |
+| appId | `com.baigames.skyhop` |
 | appName | Sky Hop |
 | webDir | `www` |
 | Config file | `capacitor.config.json` |
@@ -76,7 +76,9 @@ This copies `index.html`, `game.js`, `style.css`, `ad-config.js`, `billing.js`, 
 | Interstitial | `ca-app-pub-1834002965799249/1207791334` |
 | Rewarded | `ca-app-pub-1834002965799249/4057315950` |
 
-Plugin: `@capacitor-community/admob@7`. Guides: https://developers.google.com/admob/android/quick-start · interstitial · rewarded-fullscreen-ads.
+Plugin: `@capacitor-community/admob@7`.
+
+**AdMob ↔ Play:** link the Android app in AdMob using package **`com.baigames.skyhop`** (App ID / unit IDs unchanged). Guides: https://developers.google.com/admob/android/quick-start · interstitial · rewarded-fullscreen-ads.
 
 **Policy:** do not click your own ads; no accidental-click placements; interstitials at natural breaks; rewarded unlock only after earned reward; https://support.google.com/admob/answer/6128543
 

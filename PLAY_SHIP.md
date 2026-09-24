@@ -1,6 +1,6 @@
 # Sky Hop — Play Ship Checklist
 
-**Package:** `com.skyhop.game`  
+**Package:** `com.baigames.skyhop`  
 **Privacy (live):** https://bohusionut-sys.github.io/sky-hop/privacy.html ✅ verified 2026-09-23  
 **Store copy:** [STORE_LISTING.md](./STORE_LISTING.md)  
 **Android notes:** [ANDROID.md](./ANDROID.md)
@@ -13,9 +13,9 @@ Ruthless split: **DONE in repo + on agent box (JDK/SDK/AAB)** vs **ONLY Play Con
 
 | Item | Status |
 |------|--------|
-| Capacitor Android project `android/` with `applicationId` / namespace `com.skyhop.game` | ✅ |
+| Capacitor Android project `android/` with `applicationId` / namespace `com.baigames.skyhop` | ✅ |
 | App name strings = Sky Hop | ✅ |
-| `capacitor.config.json` appId `com.skyhop.game`, webDir `www` | ✅ |
+| `capacitor.config.json` appId `com.baigames.skyhop`, webDir `www` | ✅ |
 | Plugins: `@capacitor-community/admob@7`, `@capgo/native-purchases@7`, `@capacitor/app@7` | ✅ |
 | AdMob App ID in `AndroidManifest` meta-data `APPLICATION_ID` | ✅ `ca-app-pub-1834002965799249~7940720644` |
 | Ad unit IDs in `ad-config.js` with `USE_REAL_ADS: true` | ✅ interstitial + rewarded |
@@ -85,7 +85,7 @@ Windows machine is **optional** now that the agent box has JDK + SDK + a signed 
 - App or game: **Game**
 - Free/paid: **Free**
 - Declarations: accept Play policies / US export / etc. as prompted
-- Package name when uploading first AAB must be **`com.skyhop.game`** (already baked into the project)
+- Package name when uploading first AAB must be **`com.baigames.skyhop`** (already baked into the project)
 
 ### 2. Store listing (paste from STORE_LISTING.md)
 
@@ -167,7 +167,9 @@ License testers: add your Google accounts under Setup → License testing.
 
 ### 9. AdMob ↔ Play linking
 
-- In AdMob: ensure app is linked to the Play Store listing once published / available.
+- AdMob App ID and ad unit IDs stay the same (`ca-app-pub-1834002965799249~7940720644` / interstitial + rewarded in `ad-config.js` + manifest).
+- In AdMob: when linking the Android app to Play, use package **`com.baigames.skyhop`** (matches Play Console app 4972861807879737602).
+- Ensure the app is linked to the Play Store listing once published / available.
 - Do **not** click your own ads. Use test devices / demo units only for click testing.
 
 ### 10. Release tracks
@@ -210,7 +212,7 @@ Also documented in [`store-assets/README.md`](./store-assets/README.md).
 
 | Check | Pass? |
 |-------|-------|
-| Package `com.skyhop.game` | |
+| Package `com.baigames.skyhop` | |
 | Ads show on device (not placeholdery) | |
 | Rewarded: no reward if user closes early | |
 | Remove ads IAP → ads stop; restore works | |

@@ -1,4 +1,4 @@
-package com.skyhop.game;
+package com.baigames.skyhop;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -100,7 +100,7 @@ Skins, maps, trails, and music share the same names/tiers (one map, one light tr
 
 ## Android (Capacitor / Play Store)
 
-Native Android wrap uses **Capacitor** (`appId` **`com.skyhop.game`**, web assets from `www/`).
+Native Android wrap uses **Capacitor** (`appId` **`com.baigames.skyhop`**, web assets from `www/`).
 
 ```bash
 npm install

@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Sky Hop</string>
     <string name="title_activity_main">Sky Hop</string>
-    <string name="package_name">com.skyhop.game</string>
-    <string name="custom_url_scheme">com.skyhop.game</string>
+    <string name="package_name">com.baigames.skyhop</string>
+    <string name="custom_url_scheme">com.baigames.skyhop</string>
 </resources>
