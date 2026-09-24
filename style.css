@@ -1075,14 +1075,23 @@ body.playing .promo-banner {
 
   #app {
     flex-direction: column;
-    align-items: stretch;
-    padding: 8px;
-    gap: 10px;
-    padding-bottom: 72px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   #main-col {
     width: 100%;
+    gap: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #wrap {
+    margin: 0 auto;
   }
 
   #promo {
@@ -1149,8 +1158,30 @@ body.playing .promo-banner {
   }
 
   #game {
-    max-width: min(100vw - 16px, 360px);
-    max-height: min(58vh, 640px);
+    /* Contain-fit 360×640 into the viewport — fill width or height, no 360px/58vh caps */
+    width: min(100vw, calc(100dvh * 360 / 640));
+    height: min(100dvh, calc(100vw * 640 / 360));
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Keep beta CTA off document flow so it does not shrink the stage */
+  #main-col {
+    position: relative;
+  }
+
+  .beta-link {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+  }
+
+  body.playing .beta-link {
+    display: none;
   }
 
   .shop-grid {
@@ -1580,4 +1611,55 @@ body.playing .promo-banner {
   color: #ff9a86;
   text-decoration: underline;
   opacity: 1;
+}
+
+
+/* Capacitor / native shell: fill the screen, drop web-only chrome */
+body.capacitor {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overscroll-behavior: none;
+  background: #0b1220;
+}
+
+body.capacitor #app {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+  height: 100%;
+  height: 100dvh;
+}
+
+body.capacitor #main-col {
+  width: 100%;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+}
+
+body.capacitor #wrap {
+  margin: 0 auto;
+  max-width: none;
+}
+
+body.capacitor #game {
+  width: min(100vw, calc(100dvh * 360 / 640));
+  height: min(100dvh, calc(100vw * 640 / 360));
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.capacitor .beta-link,
+body.capacitor #promo,
+body.capacitor .promo-banner {
+  display: none !important;
 }

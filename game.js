@@ -1,6 +1,10 @@
 (() => {
   "use strict";
 
+  try {
+    if (window.Capacitor) document.body.classList.add("capacitor");
+  } catch (e) {}
+
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
