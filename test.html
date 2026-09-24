@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ff765f" />
+  <title>Sky Hop — Android beta</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --coral: #ff765f;
+      --coral-dark: #d94e43;
+      --sky: #9fe4f2;
+      --ink: #17243b;
+      --muted: #52647d;
+      --cream: #fffaf0;
+      --card: rgba(255, 255, 255, 0.9);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 80% 8%, rgba(255, 255, 255, 0.8) 0 7%, transparent 7.5%),
+        linear-gradient(180deg, var(--sky) 0%, #d8f5f3 58%, var(--cream) 58% 100%);
+    }
+    main { width: min(100% - 2rem, 44rem); margin: 0 auto; padding: 3.5rem 0 2rem; }
+    .brand { color: var(--coral-dark); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem; }
+    h1 { margin: .55rem 0 .65rem; font-size: clamp(2.25rem, 10vw, 4.2rem); line-height: .98; letter-spacing: -.045em; }
+    .pitch { max-width: 34rem; margin: 0; color: var(--muted); font-size: 1.12rem; line-height: 1.55; }
+    .card { margin-top: 2rem; padding: clamp(1.25rem, 5vw, 2rem); border: 2px solid rgba(255, 118, 95, .18); border-radius: 1.25rem; background: var(--card); box-shadow: 0 1rem 2.5rem rgba(43, 87, 112, .14); }
+    h2 { margin: 0 0 .75rem; font-size: 1.35rem; }
+    .cta { display: inline-block; margin: .4rem 0 .65rem; padding: .9rem 1.2rem; border-radius: .8rem; color: #fff; background: var(--coral); box-shadow: 0 .3rem 0 var(--coral-dark); font-weight: 800; text-decoration: none; }
+    .cta:hover, .cta:focus-visible { background: var(--coral-dark); }
+    .note { margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }
+    ul { margin: .45rem 0 0; padding-left: 1.25rem; color: var(--muted); line-height: 1.7; }
+    .links { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; margin-top: 1.5rem; }
+    a { color: var(--coral-dark); font-weight: 700; }
+    footer { padding-top: 1.5rem; color: var(--muted); font-size: .9rem; }
+    footer a { margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">BAI Games</div>
+    <h1>Sky Hop — Android beta</h1>
+    <p class="pitch">Help shape an original one-tap flyer with playful skins, maps, and Stardust to collect. Join the Sky Hop closed test and send us the rough edges before launch.</p>
+
+    <section class="card" id="closed-test" aria-labelledby="join-heading">
+      <h2 id="join-heading">Join the closed test</h2>
+      <a class="cta" href="#closed-test">Join closed test on Google Play</a>
+      <p class="note"><strong>Link goes live when the closed track is published.</strong> The opt-in link will be added here as soon as it is available.</p>
+      <div class="links">
+        <a href="https://play.google.com/apps/internaltest/4701175694758760911">Try the internal test for early access</a>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="requirements-heading">
+      <h2 id="requirements-heading">What you need</h2>
+      <ul>
+        <li>An Android phone or tablet</li>
+        <li>A Google account for Google Play</li>
+        <li>The Play Store installed</li>
+      </ul>
+    </section>
+
+    <footer>
+      <a href="https://bohusionut-sys.github.io/sky-hop/privacy.html">Privacy</a>
+      <a href="https://bohusionut-sys.github.io/sky-hop/">Web play now</a>
+    </footer>
+  </main>
+</body>
+</html>

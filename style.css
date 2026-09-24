@@ -1566,3 +1566,18 @@ body.playing .promo-banner {
 .stardust-reward-btn[disabled] {
   opacity: 0.55;
 }
+
+/* Quiet link for Android beta recruitment; kept outside the game canvas. */
+.beta-link {
+  color: #9fb6d3;
+  font-size: 0.78rem;
+  text-decoration: none;
+  opacity: 0.78;
+}
+
+.beta-link:hover,
+.beta-link:focus-visible {
+  color: #ff9a86;
+  text-decoration: underline;
+  opacity: 1;
+}

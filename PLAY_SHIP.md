@@ -176,7 +176,7 @@ License testers: add your Google accounts under Setup → License testing.
 
 1. Upload **signed** `app-release.aab`
 2. **Internal testing** first — verify interstitial, rewarded grant, remove-ads restore, one Stardust pack
-3. Closed testing if still required for your account (historically 12 testers / 14 days — check current Play policy for your account)
+3. Closed testing if still required for your account (12+ opted-in testers / about 14 days on this account). See [`CLOSED_TESTING.md`](./CLOSED_TESTING.md) for the tester checklist and [`store-assets/tester-outreach.md`](./store-assets/tester-outreach.md) for ready-to-paste recruitment copy.
 4. Production rollout
 
 ### 11. Countries, pricing, declarations
