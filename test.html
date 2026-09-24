@@ -35,7 +35,8 @@
     .cta { display: inline-block; margin: .4rem 0 .65rem; padding: .9rem 1.2rem; border-radius: .8rem; color: #fff; background: var(--coral); box-shadow: 0 .3rem 0 var(--coral-dark); font-weight: 800; text-decoration: none; }
     .cta:hover, .cta:focus-visible { background: var(--coral-dark); }
     .note { margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }
-    ul { margin: .45rem 0 0; padding-left: 1.25rem; color: var(--muted); line-height: 1.7; }
+    ol, ul { margin: .45rem 0 0; padding-left: 1.4rem; color: var(--muted); line-height: 1.7; }
+    li + li { margin-top: .8rem; }
     .links { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; margin-top: 1.5rem; }
     a { color: var(--coral-dark); font-weight: 700; }
     footer { padding-top: 1.5rem; color: var(--muted); font-size: .9rem; }
@@ -46,15 +47,15 @@
   <main>
     <div class="brand">BAI Games</div>
     <h1>Sky Hop — Android beta</h1>
-    <p class="pitch">Help shape an original one-tap flyer with playful skins, maps, and Stardust to collect. Join the Sky Hop closed test and send us the rough edges before launch.</p>
+    <p class="pitch">Help shape an original one-tap flyer with playful skins, maps, and Stardust to collect. Join the Sky Hop tester group and send us the rough edges before launch.</p>
 
-    <section class="card" id="closed-test" aria-labelledby="join-heading">
-      <h2 id="join-heading">Join the closed test</h2>
-      <a class="cta" href="#closed-test">Join closed test on Google Play</a>
-      <p class="note"><strong>Link goes live when the closed track is published.</strong> The opt-in link will be added here as soon as it is available.</p>
-      <div class="links">
-        <a href="https://play.google.com/apps/internaltest/4701175694758760911">Try the internal test for early access</a>
-      </div>
+    <section class="card" id="join-test" aria-labelledby="join-heading">
+      <h2 id="join-heading">Join the Sky Hop test</h2>
+      <ol>
+        <li><strong>Join the Google Group.</strong> <a class="cta" href="https://groups.google.com/g/skyhop-testers">Join the Sky Hop testers group</a><br />Anyone can join. Member email addresses are visible only to group managers, not to other testers.</li>
+        <li><strong>Open the Google Play opt-in</strong> using the <strong>same Google account</strong> you used for the group, then follow Google Play's instructions to install Sky Hop: <a href="https://play.google.com/apps/internaltest/4701175694758760911">open the Play opt-in</a>.</li>
+      </ol>
+      <p class="note">The current Play link is for internal testing. The broader closed-test opt-in is coming soon and will be added here when it is live.</p>
     </section>
 
     <section class="card" aria-labelledby="requirements-heading">
