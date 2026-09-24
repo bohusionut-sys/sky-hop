@@ -50,7 +50,7 @@
   const PIXELS_PER_COIN = 40;
   // Stardust: 1 per this many pipes cleared in a run (slow free earn)
   const PIPES_PER_STARDUST = 25;
-  const AD_EVERY_N_RUNS = 3;
+  const AD_EVERY_N_RUNS = 10;
   const AD_COUNTDOWN_SEC = 5;
   const REWARD_STARDUST_AMOUNT = 1;
   const REWARD_STARDUST_DAILY_MAX = 3;
