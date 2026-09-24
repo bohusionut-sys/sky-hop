@@ -4,12 +4,12 @@ Sky Hop is preparing for Google Play production release. On this Play Console ac
 
 ## How to join the tester group
 
-1. Use an Android phone with the Google Play Store and a Google account.
-2. Join the Sky Hop Google Group: [skyhop-testers](https://groups.google.com/g/skyhop-testers). Anyone can join; member email addresses are visible only to group managers, not to other testers.
-3. Open the [Google Play opt-in](https://play.google.com/apps/internaltest/4701175694758760911) with the **same Google account** you used to join the group, then follow Google Play's instructions to install Sky Hop.
-4. Keep the app installed/available during the test period and report what you find. The group email is **skyhop-testers@googlegroups.com**.
+1. Join the Sky Hop Google Group: [skyhop-testers](https://groups.google.com/g/skyhop-testers). Anyone can join; member email addresses are visible only to group managers, not to other testers.
+2. Open the [closed-testing Google Play opt-in](https://play.google.com/apps/testing/com.baigames.skyhop) with the **same Google account** you used to join the group, then follow Google Play's instructions to install Sky Hop.
+3. Use an Android phone with the Google Play Store and keep the app installed/available during the test period.
+4. Report what you find. The group email is **skyhop-testers@googlegroups.com**.
 
-The current Play link is for internal testing and is useful for early access, but it does **not** replace the closed-testing requirement. The broader closed-test opt-in is coming soon; this document will be updated when it is live.
+After the closed test is reviewed, Google Play may take a short while before the opt-in becomes joinable. **Optional early access:** use the [internal-testing opt-in](https://play.google.com/apps/internaltest/4701175694758760911), which does not replace the closed-testing requirement.
 
 ## What to test
 
@@ -29,5 +29,5 @@ Email feedback to **bohus.ionut@gmail.com** or **valentina.palade97@gmail.com**,
 
 ## Internal vs closed testing
 
-- **Internal testing** is the small developer-focused track for early build checks. It is useful for quick verification but does **not** replace the closed-testing requirement. Current internal opt-in: [join internal testing](https://play.google.com/apps/internaltest/4701175694758760911).
-- **Closed testing** is the broader tester group that counts toward the production gate: 12+ opted-in testers for about 14 days on this account. Its opt-in link is coming soon.
+- **Closed testing** is the broader tester group that counts toward the production gate: 12+ opted-in testers for about 14 days on this account. [Join the closed test on Google Play](https://play.google.com/apps/testing/com.baigames.skyhop).
+- **Internal testing** is optional early access for small developer-focused build checks. It does **not** replace the closed-testing requirement: [join internal testing](https://play.google.com/apps/internaltest/4701175694758760911).

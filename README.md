@@ -2,7 +2,12 @@
 
 ## Android beta testers wanted
 
-Test Sky Hop on Android via the [internal early-access opt-in](https://play.google.com/apps/internaltest/4701175694758760911), then use the [beta page](https://bohusionut-sys.github.io/sky-hop/test.html). The internal link works now with an Android device and Google account; the closed track is coming soon. Send feedback to [bohus.ionut@gmail.com](mailto:bohus.ionut@gmail.com) or open a GitHub issue.
+Test Sky Hop on Android:
+
+1. Join the [Sky Hop testers Google Group](https://groups.google.com/g/skyhop-testers).
+2. Using the same Google account, open the [closed-testing Play opt-in](https://play.google.com/apps/testing/com.baigames.skyhop), then use the [beta page](https://bohusionut-sys.github.io/sky-hop/test.html).
+
+After review, Google Play may take a short while before the closed-test opt-in becomes joinable. For optional early access, use the [internal-testing opt-in](https://play.google.com/apps/internaltest/4701175694758760911). Send feedback to [bohus.ionut@gmail.com](mailto:bohus.ionut@gmail.com) or open a GitHub issue.
 
 A lightweight endless flyer — tap to hop through scrolling pillars. Original visuals and title; classic gravity/flap feel.
 
