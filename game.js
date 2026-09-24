@@ -4562,8 +4562,212 @@
     requestAnimationFrame(loop);
   }
 
+
+  const UPDATE_MANIFEST_URL =
+    "https://bohusionut-sys.github.io/sky-hop/version.json";
+  const UPDATE_DISMISS_SESSION_KEY = "skyHopUpdateDismissed";
+  const UPDATE_MODAL_SESSION_KEY = "skyHopUpdateModalShown";
+  let pendingUpdateUrl = null;
+
+  function isNativeCapacitor() {
+    try {
+      return !!(
+        window.Capacitor &&
+        typeof window.Capacitor.isNativePlatform === "function" &&
+        window.Capacitor.isNativePlatform()
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function getCapacitorAppPlugin() {
+    try {
+      const plugins = window.Capacitor && window.Capacitor.Plugins;
+      return (plugins && plugins.App) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function openUpdateUrl(url) {
+    if (!url) return;
+    try {
+      const plugins = window.Capacitor && window.Capacitor.Plugins;
+      const Browser = plugins && plugins.Browser;
+      if (Browser && typeof Browser.open === "function") {
+        Browser.open({ url: url });
+        return;
+      }
+    } catch (e) {}
+    try {
+      window.open(url, "_system");
+    } catch (e2) {
+      try {
+        window.open(url, "_blank");
+      } catch (e3) {}
+    }
+  }
+
+  function hideUpdateNotice() {
+    const modal = document.getElementById("update-needed");
+    const banner = document.getElementById("update-banner");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    if (banner) {
+      banner.classList.add("hidden");
+      banner.hidden = true;
+    }
+  }
+
+  function showUpdateNotice(manifest, opts) {
+    const showModal = !opts || opts.modal !== false;
+    const msg =
+      (manifest && manifest.message) ||
+      "A new Sky Hop build is available. Update for the latest fixes.";
+    pendingUpdateUrl = (manifest && manifest.updateUrl) || null;
+
+    const msgEl = document.getElementById("update-needed-msg");
+    if (msgEl) msgEl.textContent = msg;
+    const bannerText = document.getElementById("update-banner-text");
+    if (bannerText) {
+      const ver = manifest && manifest.latestVersionName;
+      bannerText.textContent = ver
+        ? "Update needed · v" + ver
+        : "Update needed";
+    }
+
+    const banner = document.getElementById("update-banner");
+    if (banner) {
+      banner.classList.remove("hidden");
+      banner.hidden = false;
+    }
+
+    const modal = document.getElementById("update-needed");
+    if (modal && showModal) {
+      modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  function dismissUpdateModalOnly() {
+    const modal = document.getElementById("update-needed");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    try {
+      sessionStorage.setItem(UPDATE_MODAL_SESSION_KEY, "1");
+    } catch (e) {}
+  }
+
+  function dismissUpdateForSession() {
+    try {
+      sessionStorage.setItem(UPDATE_DISMISS_SESSION_KEY, "1");
+      sessionStorage.setItem(UPDATE_MODAL_SESSION_KEY, "1");
+    } catch (e) {}
+    hideUpdateNotice();
+  }
+
+  function wireUpdateUiOnce() {
+    if (wireUpdateUiOnce.done) return;
+    wireUpdateUiOnce.done = true;
+    const updateNow = document.getElementById("update-now");
+    const updateLater = document.getElementById("update-later");
+    const bannerBtn = document.getElementById("update-banner-btn");
+    const bannerLater = document.getElementById("update-banner-later");
+    if (updateNow) {
+      updateNow.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openUpdateUrl(pendingUpdateUrl);
+      });
+    }
+    if (updateLater) {
+      updateLater.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dismissUpdateModalOnly();
+      });
+    }
+    if (bannerBtn) {
+      bannerBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openUpdateUrl(pendingUpdateUrl);
+      });
+    }
+    if (bannerLater) {
+      bannerLater.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dismissUpdateForSession();
+      });
+    }
+  }
+
+  async function getInstalledVersionCode() {
+    const App = getCapacitorAppPlugin();
+    if (App && typeof App.getInfo === "function") {
+      const info = await App.getInfo();
+      const build = info && (info.build != null ? String(info.build) : "");
+      const code = parseInt(build, 10);
+      if (Number.isFinite(code)) return code;
+    }
+    return null;
+  }
+
+  /** Soft update check: native Capacitor only; silent on fetch/network errors. */
+  async function checkForAppUpdate() {
+    wireUpdateUiOnce();
+    if (!isNativeCapacitor()) return;
+    let dismissed = false;
+    let modalShown = false;
+    try {
+      dismissed = sessionStorage.getItem(UPDATE_DISMISS_SESSION_KEY) === "1";
+      modalShown = sessionStorage.getItem(UPDATE_MODAL_SESSION_KEY) === "1";
+    } catch (e) {}
+    if (dismissed) return;
+
+    let installed;
+    try {
+      installed = await getInstalledVersionCode();
+    } catch (e) {
+      return;
+    }
+    if (installed == null || !Number.isFinite(installed)) return;
+
+    let manifest;
+    try {
+      const res = await fetch(UPDATE_MANIFEST_URL + "?t=" + Date.now(), {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      manifest = await res.json();
+    } catch (e) {
+      return;
+    }
+    if (!manifest || typeof manifest !== "object") return;
+
+    const latest = parseInt(manifest.latestVersionCode, 10);
+    const min = parseInt(manifest.minVersionCode, 10);
+    const needLatest = Number.isFinite(latest) && installed < latest;
+    const needMin = Number.isFinite(min) && installed < min;
+    if (!needLatest && !needMin) return;
+
+    showUpdateNotice(manifest, { modal: !modalShown });
+    if (!modalShown) {
+      try {
+        sessionStorage.setItem(UPDATE_MODAL_SESSION_KEY, "1");
+      } catch (e) {}
+    }
+  }
+
   syncCoinHUD();
   warmUpAdMob();
+  checkForAppUpdate();
   resetGame();
   requestAnimationFrame(loop);
 })();

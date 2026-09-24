@@ -4,7 +4,7 @@
   "private": true,
   "description": "Sky Hop — endless flyer Android wrap via Capacitor",
   "scripts": {
-    "build:web": "mkdir -p www && cp index.html game.js style.css ad-config.js billing.js privacy.html test.html www/",
+    "build:web": "mkdir -p www && cp index.html game.js style.css ad-config.js billing.js privacy.html test.html version.json www/",
     "cap:sync": "npm run build:web && npx cap sync",
     "cap:open": "npx cap open android",
     "cap:add:android": "npm run build:web && npx cap add android"

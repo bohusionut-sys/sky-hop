@@ -1663,3 +1663,95 @@ body.capacitor #promo,
 body.capacitor .promo-banner {
   display: none !important;
 }
+
+/* --- Soft update notice --- */
+.update-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, rgba(21, 32, 54, 0.96), rgba(21, 32, 54, 0.88));
+  border-bottom: 1px solid rgba(233, 196, 106, 0.55);
+  color: #e8eef8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  pointer-events: auto;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.update-banner.hidden,
+.update-banner[hidden] {
+  display: none !important;
+}
+
+#update-banner-text {
+  flex: 1;
+  text-align: left;
+  color: #e9c46a;
+  letter-spacing: 0.02em;
+}
+
+.update-banner-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: #e9c46a;
+  color: #1a1520;
+  font-weight: 800;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.update-banner-btn:active {
+  transform: scale(0.97);
+}
+
+.update-banner-later {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.update-panel h2 {
+  color: #e9c46a;
+  margin: 4px 0 10px;
+  font-size: 1.35rem;
+}
+
+.update-kicker {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.update-msg {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.82);
+  margin-bottom: 18px;
+}
+
+.update-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.update-actions .promo-btn,
+.update-actions .btn-ghost {
+  flex: 1;
+}
+
+/* Keep banner above canvas but below full-screen overlays; don't cover frame nav badly on capacitor */
+body.capacitor .update-banner {
+  padding-top: max(6px, env(safe-area-inset-top, 0px));
+}

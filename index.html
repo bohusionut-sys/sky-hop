@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Sky Hop</title>
-  <link rel="stylesheet" href="style.css?v=fix16" />
+  <link rel="stylesheet" href="style.css?v=9241" />
 </head>
 <body>
   <script>
@@ -39,6 +39,11 @@
           <button type="button" id="btn-challenges" class="hud-btn frame-btn frame-btn-challenges" aria-label="Open challenges">Challenges</button>
         </div>
         <button type="button" id="btn-remove-ads" class="hud-btn frame-btn frame-btn-remove" aria-label="Open remove ads">No Ads</button>
+        <div id="update-banner" class="update-banner hidden" role="status" aria-live="polite" hidden>
+          <span id="update-banner-text">Update needed</span>
+          <button type="button" id="update-banner-btn" class="update-banner-btn">Update</button>
+          <button type="button" id="update-banner-later" class="update-banner-later" aria-label="Dismiss update banner">Later</button>
+        </div>
       </div>
       <a class="beta-link" href="test.html">Android beta</a>
     </div>
@@ -190,6 +195,20 @@
     </div>
   </div>
 
+
+  <!-- Soft update notice (native / outdated build) -->
+  <div id="update-needed" class="overlay hidden" aria-hidden="true" role="dialog" aria-labelledby="update-needed-title">
+    <div class="overlay-panel update-panel">
+      <p class="update-kicker">Sky Hop</p>
+      <h2 id="update-needed-title">Update needed</h2>
+      <p id="update-needed-msg" class="update-msg">A new Sky Hop build is available. Update for the latest fixes.</p>
+      <div class="update-actions">
+        <button type="button" id="update-later" class="btn-ghost">Later</button>
+        <button type="button" id="update-now" class="promo-btn">Update</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Simulated interstitial / rewarded ad -->
   <div id="ad-overlay" class="overlay hidden" aria-hidden="true">
     <div class="overlay-panel ad-panel">
@@ -219,6 +238,6 @@
 
   <script src="ad-config.js"></script>
   <script src="billing.js"></script>
-  <script src="game.js?v=fix16"></script>
+  <script src="game.js?v=9241"></script>
 </body>
 </html>
