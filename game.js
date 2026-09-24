@@ -231,6 +231,15 @@
       reward: { coins: 250, stardust: 2 },
     },
     {
+      id: "l_score_100_legend",
+      kind: "lifetime",
+      type: "score_run",
+      title: "One-Run Legend",
+      description: "Score at least 100 in a single run",
+      target: 100,
+      reward: { skin: "obsidian", coins: 100 },
+    },
+    {
       id: "l_legendary_soft",
       kind: "lifetime",
       type: "legendary_run",
@@ -1933,6 +1942,10 @@
 
   function formatChallengeReward(reward) {
     const parts = [];
+    if (reward.skin) {
+      const skin = SKIN_BY_ID[reward.skin];
+      parts.push(`Unlock: ${skin ? skin.name : reward.skin}`);
+    }
     if (reward.coins) parts.push(`+${reward.coins} coins`);
     if (reward.stardust) {
       parts.push(`+${reward.stardust} ${SPECIAL_CURRENCY_NAME}`);
@@ -1958,7 +1971,17 @@
       stardust += reward.stardust;
       persistStardust();
     }
-    if (!reward.coins && !reward.stardust) syncCoinHUD();
+    if (reward.skin && SKIN_BY_ID[reward.skin]) {
+      if (!ownedSkins.includes(reward.skin)) {
+        ownedSkins.push(reward.skin);
+        persistOwnedSkins();
+      } else if (!reward.stardust) {
+        // Already owned — small Stardust consolation instead of double-granting the skin
+        stardust += 2;
+        persistStardust();
+      }
+    }
+    if (!reward.coins && !reward.stardust && !reward.skin) syncCoinHUD();
     saveChallengeState();
     renderChallengesList();
   }
