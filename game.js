@@ -14,10 +14,36 @@
   const GRAVITY = 0.42;
   const FLAP = -7.2;
   const MAX_FALL = 10;
-  const PIPE_SPEED_BASE = 2.4;
   const PIPE_WIDTH = 56;
-  const PIPE_GAP_BASE = 128;
-  const PIPE_SPACING = 190;
+  // Difficulty ramp: easy at pipe 0 -> max at pipe DIFF_RAMP_PIPES, flat after.
+  // MAX values equal the previous build's top difficulty (speed 4.0, gap 100, spacing 190).
+  const DIFF_RAMP_PIPES = 60;
+  const PIPE_SPEED_EASY = 2.3;
+  const PIPE_SPEED_MAX = 4.0;
+  const PIPE_GAP_EASY = 134;
+  const PIPE_GAP_MAX = 100;
+  const PIPE_SPACING_EASY = 222;
+  const PIPE_SPACING_MAX = 190;
+  const PIPE_SPEED_BASE = PIPE_SPEED_EASY;
+  const PIPE_GAP_BASE = PIPE_GAP_EASY;
+  function difficultyT(n) {
+    if (!(n > 0)) return 0;
+    if (n >= DIFF_RAMP_PIPES) return 1;
+    const x = n / DIFF_RAMP_PIPES;
+    return x * x * (3 - 2 * x); // smoothstep
+  }
+  function lerpDiff(easy, max, n) {
+    return easy + (max - easy) * difficultyT(n);
+  }
+  function pipeSpeedFor(scoreN) {
+    return lerpDiff(PIPE_SPEED_EASY, PIPE_SPEED_MAX, scoreN);
+  }
+  function pipeGapFor(pipeIdx) {
+    return lerpDiff(PIPE_GAP_EASY, PIPE_GAP_MAX, pipeIdx);
+  }
+  function pipeSpacingFor(pipeIdx) {
+    return lerpDiff(PIPE_SPACING_EASY, PIPE_SPACING_MAX, pipeIdx);
+  }
   const GROUND_H = 96;
   const BIRD_X = 88;
   const BIRD_R = 14;
@@ -738,6 +764,7 @@
   let frames = 0;
   let pipeSpeed = PIPE_SPEED_BASE;
   let pipeGap = PIPE_GAP_BASE;
+  let pipesSpawned = 0; // index of the next pipe to spawn this run (not reset on revive)
 
   function loadStardustBalance() {
     const canonicalRaw = localStorage.getItem(STARDUST_KEY);
@@ -3623,6 +3650,7 @@
     frames = 0;
     pipeSpeed = PIPE_SPEED_BASE;
     pipeGap = PIPE_GAP_BASE;
+    pipesSpawned = 0;
     runDistance = 0;
     coinsEarnedThisRun = 0;
     stardustEarnedThisRun = 0;
@@ -3644,12 +3672,21 @@
     flash = 0;
     overTimer = 0;
     spawnPipe(W + 40);
-    spawnPipe(W + 40 + PIPE_SPACING);
-    spawnPipe(W + 40 + PIPE_SPACING * 2);
+    spawnNextPipe();
+    spawnNextPipe();
     syncPromoVisibility();
   }
 
+  // Spawn the next pipe after the last one, spaced by its own ramp index.
+  function spawnNextPipe() {
+    const lastX = pipes.length ? pipes[pipes.length - 1].x : W + 40 - pipeSpacingFor(pipesSpawned);
+    spawnPipe(lastX + pipeSpacingFor(pipesSpawned));
+  }
+
   function spawnPipe(x) {
+    // Gap is fixed per pipe from its spawn index (pipe N is cleared at score N+1).
+    pipeGap = pipeGapFor(pipesSpawned);
+    pipesSpawned++;
     const margin = 50;
     const usable = H - GROUND_H - margin * 2 - pipeGap;
     const top = margin + Math.random() * Math.max(20, usable);
@@ -3785,8 +3822,7 @@
     const targetRot = bird.vy < 0 ? -0.45 : Math.min(1.1, bird.vy * 0.09);
     bird.rot += (targetRot - bird.rot) * 0.25;
 
-    pipeSpeed = PIPE_SPEED_BASE + Math.min(1.6, score * 0.04);
-    pipeGap = Math.max(100, PIPE_GAP_BASE - Math.min(28, score * 0.6));
+    pipeSpeed = pipeSpeedFor(score);
 
     runDistance += pipeSpeed;
 
@@ -3804,8 +3840,7 @@
 
     while (pipes.length && pipes[0].x + PIPE_WIDTH < -10) {
       pipes.shift();
-      const lastX = pipes[pipes.length - 1].x;
-      spawnPipe(lastX + PIPE_SPACING);
+      spawnNextPipe();
     }
 
     if (invulnFrames > 0) invulnFrames--;
