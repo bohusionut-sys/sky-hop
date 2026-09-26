@@ -1026,6 +1026,8 @@
   let flash = 0;
   let overTimer = 0;
   let reviveUsedThisRun = false;
+  let reviveHold = false;
+  let reviveHoldY = 0;
   let reviveAvailable = false;
   let runRewardsSettled = false;
   let invulnFrames = 0;
@@ -3342,17 +3344,268 @@
         ) {
           jobs.push(AdMob.prepareInterstitial({ adId: cfg.INTERSTITIAL_UNIT_ID }));
         }
-        if (
-          !cfg.isPlaceholder(cfg.REWARDED_UNIT_ID) &&
-          typeof AdMob.prepareRewardVideoAd === "function"
-        ) {
-          jobs.push(AdMob.prepareRewardVideoAd({ adId: cfg.REWARDED_UNIT_ID }));
-        }
-        return Promise.all(jobs);
+        return Promise.all(jobs).then(
+          () => console.log("[ads] interstitial preloaded"),
+          (err) => console.warn("[ads] interstitial preload failed:", adErrText(err))
+        );
       })
       .catch((err) => {
-        console.warn("[SkyHop] AdMob warm-up failed", err);
+        console.warn("[ads] AdMob warm-up failed:", adErrText(err));
       });
+    // Rewarded (Revive + Watch-for-Stardust) is managed separately so it can be re-preloaded.
+    preloadRewarded("startup");
+  }
+
+  function adErrText(err) {
+    if (!err) return "unknown";
+    if (typeof err === "string") return err;
+    if (err.message) return (err.code != null ? "code " + err.code + ": " : "") + err.message;
+    try {
+      return JSON.stringify(err);
+    } catch (e) {
+      return String(err);
+    }
+  }
+
+  // ---------- Rewarded ad manager (native) ----------
+  // Plugin @capacitor-community/admob 7.x quirks this handles:
+  //  - showRewardVideoAd() only resolves when the reward is EARNED; if the user closes early or the ad
+  //    fails to show, that promise never settles -> we drive the flow from events instead.
+  //  - A shown RewardedAd is single-use; we must prepare a fresh one after every show.
+  //  - Reward fires while the ad is still on screen -> apply game effects on Dismissed.
+  const REWARDED_WAIT_MS = 7000; // max wait for a load when the player taps
+  const REWARDED_SHOW_TIMEOUT_MS = 8000; // max wait for the ad to actually appear after show()
+  const REWARDED_RETRY_MS = [15000, 30000, 60000, 120000];
+  const REWARDED_EVT = {
+    Loaded: "onRewardedVideoAdLoaded",
+    FailedToLoad: "onRewardedVideoAdFailedToLoad",
+    Showed: "onRewardedVideoAdShowed",
+    FailedToShow: "onRewardedVideoAdFailedToShow",
+    Dismissed: "onRewardedVideoAdDismissed",
+    Rewarded: "onRewardedVideoAdReward",
+  };
+  const rewarded = {
+    status: "idle", // idle | loading | loaded | failed | showing
+    loadPromise: null,
+    lastError: null,
+    retryIdx: 0,
+    retryTimer: null,
+    listenersReady: false,
+    session: null,
+  };
+
+  function ensureRewardedListeners(AdMob) {
+    if (rewarded.listenersReady || !AdMob || typeof AdMob.addListener !== "function") return;
+    rewarded.listenersReady = true;
+    const on = (name, fn) => {
+      try {
+        const r = AdMob.addListener(name, fn);
+        if (r && typeof r.catch === "function") r.catch(() => {});
+      } catch (e) {
+        console.warn("[ads] addListener failed", name, e);
+      }
+    };
+    on(REWARDED_EVT.Loaded, () => console.log("[ads] rewarded event: loaded"));
+    on(REWARDED_EVT.FailedToLoad, (e) => console.warn("[ads] rewarded event: failed to load:", adErrText(e)));
+    on(REWARDED_EVT.Showed, () => {
+      console.log("[ads] rewarded event: showed");
+      if (rewarded.session) rewarded.session.showed = true;
+    });
+    on(REWARDED_EVT.FailedToShow, (e) => {
+      console.warn("[ads] rewarded event: failed to show:", adErrText(e));
+      if (rewarded.session) endRewardedSession(rewarded.session.earned ? "earned" : "noad");
+    });
+    on(REWARDED_EVT.Rewarded, (item) => {
+      console.log("[ads] rewarded event: reward earned", item ? JSON.stringify(item) : "");
+      if (rewarded.session) rewarded.session.earned = true;
+    });
+    on(REWARDED_EVT.Dismissed, () => {
+      console.log("[ads] rewarded event: dismissed");
+      if (rewarded.session) endRewardedSession(rewarded.session.earned ? "earned" : "dismissed");
+    });
+  }
+
+  function preloadRewarded(reason) {
+    const cfg = getAdConfig();
+    const AdMob = getNativeAdMob();
+    if (!cfg || !cfg.USE_REAL_ADS || !AdMob || cfg.isPlaceholder(cfg.REWARDED_UNIT_ID)) return null;
+    if (typeof AdMob.prepareRewardVideoAd !== "function") return null;
+    ensureRewardedListeners(AdMob);
+    if (rewarded.status === "loaded" || rewarded.status === "showing") return Promise.resolve(true);
+    if (rewarded.status === "loading" && rewarded.loadPromise) return rewarded.loadPromise;
+    if (rewarded.retryTimer) {
+      clearTimeout(rewarded.retryTimer);
+      rewarded.retryTimer = null;
+    }
+    rewarded.status = "loading";
+    console.log("[ads] rewarded load start (" + (reason || "?") + ")");
+    const t0 = Date.now();
+    const p = ensureAdMobInitialized(AdMob)
+      .then(() => AdMob.prepareRewardVideoAd({ adId: cfg.REWARDED_UNIT_ID }))
+      .then(
+        () => {
+          if (rewarded.loadPromise !== p) return true;
+          rewarded.status = "loaded";
+          rewarded.lastError = null;
+          rewarded.retryIdx = 0;
+          console.log("[ads] rewarded loaded in " + (Date.now() - t0) + "ms");
+          return true;
+        },
+        (err) => {
+          if (rewarded.loadPromise !== p) return false;
+          rewarded.status = "failed";
+          rewarded.lastError = adErrText(err);
+          console.warn(
+            "[ads] rewarded load failed after " + (Date.now() - t0) + "ms: " + rewarded.lastError +
+              " (no fill is common for new AdMob apps / units not yet linked to a Play listing)"
+          );
+          scheduleRewardedRetry();
+          return false;
+        }
+      );
+    rewarded.loadPromise = p;
+    return p;
+  }
+
+  function scheduleRewardedRetry() {
+    if (rewarded.retryTimer) return;
+    const delay = REWARDED_RETRY_MS[Math.min(rewarded.retryIdx, REWARDED_RETRY_MS.length - 1)];
+    rewarded.retryIdx++;
+    console.log("[ads] rewarded retry in " + Math.round(delay / 1000) + "s");
+    rewarded.retryTimer = setTimeout(() => {
+      rewarded.retryTimer = null;
+      if (rewarded.status === "failed" || rewarded.status === "idle") preloadRewarded("retry");
+    }, delay);
+  }
+
+  function endRewardedSession(result) {
+    const s = rewarded.session;
+    if (!s || s.done) return;
+    s.done = true;
+    rewarded.session = null;
+    if (s.showTimer) clearTimeout(s.showTimer);
+    if (s.visHandler) document.removeEventListener("visibilitychange", s.visHandler);
+    console.log("[ads] rewarded session end: " + result + " (" + s.placement + ")");
+    // A shown ad is single-use: load the next one now.
+    rewarded.status = "idle";
+    rewarded.loadPromise = null;
+    setTimeout(() => preloadRewarded("after-" + result), 250);
+    s.resolve(result);
+  }
+
+  function withTimeout(promise, ms) {
+    return new Promise((resolve) => {
+      let done = false;
+      const t = setTimeout(() => {
+        if (!done) {
+          done = true;
+          resolve("timeout");
+        }
+      }, ms);
+      Promise.resolve(promise).then(
+        (v) => {
+          if (!done) {
+            done = true;
+            clearTimeout(t);
+            resolve(v);
+          }
+        },
+        () => {
+          if (!done) {
+            done = true;
+            clearTimeout(t);
+            resolve(false);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Show a native rewarded ad. Resolves (never rejects, never hangs) with:
+   *  "earned" | "dismissed" (closed before reward) | "noad" (no fill / load or show failure / timeout)
+   */
+  async function runNativeRewarded(placement) {
+    const AdMob = getNativeAdMob();
+    const cfg = getAdConfig();
+    if (!AdMob || !cfg) return "noad";
+    ensureRewardedListeners(AdMob);
+    if (rewarded.status !== "loaded") {
+      showToast("Loading ad…", REWARDED_WAIT_MS);
+      console.log("[ads] rewarded not ready (" + rewarded.status + "), waiting up to " + REWARDED_WAIT_MS + "ms");
+      const r = await withTimeout(preloadRewarded("tap-" + placement), REWARDED_WAIT_MS);
+      hideToast();
+      if (r !== true || rewarded.status !== "loaded") {
+        console.warn("[ads] rewarded unavailable for " + placement + ": " + (r === "timeout" ? "load timeout" : rewarded.lastError || "load failed"));
+        return "noad";
+      }
+    }
+    return new Promise((resolve) => {
+      const s = { placement, earned: false, showed: false, done: false, resolve, showTimer: null, visHandler: null };
+      rewarded.session = s;
+      rewarded.status = "showing";
+      console.log("[ads] rewarded show (" + placement + ")");
+      s.showTimer = setTimeout(() => {
+        if (!s.showed && !s.done) {
+          console.warn("[ads] rewarded show timeout — ad never appeared");
+          endRewardedSession(s.earned ? "earned" : "noad");
+        }
+      }, REWARDED_SHOW_TIMEOUT_MS);
+      // Safety net if Dismissed never arrives: when the WebView becomes visible again, settle.
+      s.visHandler = () => {
+        if (document.visibilityState !== "visible" || !s.showed) return;
+        setTimeout(() => {
+          if (!s.done) {
+            console.warn("[ads] rewarded: page visible again without Dismissed — settling");
+            endRewardedSession(s.earned ? "earned" : "dismissed");
+          }
+        }, 2000);
+      };
+      document.addEventListener("visibilitychange", s.visHandler);
+      let showPromise;
+      try {
+        showPromise = AdMob.showRewardVideoAd();
+      } catch (e) {
+        showPromise = Promise.reject(e);
+      }
+      Promise.resolve(showPromise).then(
+        (item) => {
+          // Resolves only on reward (ad may still be on screen): wait for Dismissed.
+          if (item) s.earned = true;
+          console.log("[ads] rewarded show() resolved (reward)");
+        },
+        (err) => {
+          console.warn("[ads] rewarded show() rejected:", adErrText(err));
+          endRewardedSession(s.earned ? "earned" : "noad");
+        }
+      );
+    });
+  }
+
+  // ---------- Toast ----------
+  let toastEl = null;
+  let toastTimer = null;
+  function showToast(msg, ms) {
+    if (typeof document === "undefined") return;
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.id = "sky-toast";
+      toastEl.className = "sky-toast hidden";
+      toastEl.setAttribute("role", "status");
+      toastEl.setAttribute("aria-live", "polite");
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.classList.remove("hidden");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, ms || 2600);
+  }
+  function hideToast() {
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    if (toastEl) toastEl.classList.add("hidden");
   }
 
   function ensureAdMobInitialized(AdMob) {
@@ -3364,11 +3617,11 @@
               initializeForTesting: false,
               taggingForChildDirectedTreatment: false,
               taggingForUnderAgeOfConsent: false,
-            });
+            }).then(() => console.log("[ads] AdMob initialized"));
           }
         })
         .catch((err) => {
-          console.warn("[SkyHop] AdMob initialize failed", err);
+          console.warn("[ads] AdMob initialize failed:", adErrText(err));
           admobInitPromise = null;
           throw err;
         });
@@ -3432,7 +3685,7 @@
     pendingStartAfterAd = false;
 
     const fallback = (reason) => {
-      console.warn("[SkyHop] Native ad fallback:", reason);
+      console.warn("[ads] native " + kind + " fallback to simulated overlay:", reason);
       showSimulatedAdThen(callback, opts);
     };
 
@@ -3443,45 +3696,48 @@
 
     ensureAdMobInitialized(AdMob)
       .then(async () => {
-        if (kind === "rewarded") {
-          // Policy: grant only after the user earns the reward (not on dismiss).
-          let earned = false;
-          let rewardHandle = null;
-          try {
-            if (typeof AdMob.addListener === "function") {
-              rewardHandle = await AdMob.addListener(
-                "onRewardedVideoAdReward",
-                () => {
-                  earned = true;
-                }
-              );
-            }
-            await AdMob.prepareRewardVideoAd({ adId: cfg.REWARDED_UNIT_ID });
-            const rewardItem = await AdMob.showRewardVideoAd();
-            if (rewardItem) earned = true;
-          } finally {
-            try {
-              if (rewardHandle && typeof rewardHandle.remove === "function") {
-                await rewardHandle.remove();
-              }
-            } catch (e) {
-              /* ignore */
-            }
-          }
-          if (earned) {
-            finishAdFlow(callback, opts, kind);
-          } else {
-            adBlocking = false;
-            console.warn("[SkyHop] Rewarded ad closed without reward — no grant");
-          }
-          return;
-        }
+        console.log("[ads] interstitial load+show");
         await AdMob.prepareInterstitial({ adId: cfg.INTERSTITIAL_UNIT_ID });
         await AdMob.showInterstitial();
+        console.log("[ads] interstitial shown");
         finishAdFlow(callback, opts, kind);
       })
       .catch((err) => {
         fallback(err && err.message ? err.message : err);
+      });
+  }
+
+  /**
+   * Native rewarded: callback only when earned. opts.onNoAd() on no fill / failure,
+   * opts.onDismissed() when closed before the reward. Never leaves adBlocking stuck.
+   */
+  function showNativeRewardedThen(callback, opts) {
+    adBlocking = true;
+    pendingStartAfterAd = false;
+    const placement = opts.placement || "rewarded";
+    let result;
+    runNativeRewarded(placement)
+      .then((r) => {
+        result = r;
+      })
+      .catch((err) => {
+        console.warn("[ads] rewarded flow error:", adErrText(err));
+        result = "noad";
+      })
+      .then(() => {
+        adBlocking = false;
+        console.log("[ads] rewarded result for " + placement + ": " + result);
+        try {
+          if (result === "earned") {
+            if (typeof callback === "function") callback();
+          } else if (result === "noad") {
+            if (typeof opts.onNoAd === "function") opts.onNoAd();
+          } else if (typeof opts.onDismissed === "function") {
+            opts.onDismissed();
+          }
+        } catch (e) {
+          console.error("[ads] rewarded result handler failed", e);
+        }
       });
   }
 
@@ -3493,6 +3749,10 @@
   function showAdThen(callback, opts) {
     opts = opts || {};
     const kind = opts.kind || "interstitial";
+    if (kind === "rewarded" && canUseRealAds(kind)) {
+      showNativeRewardedThen(callback, opts);
+      return;
+    }
     if (canUseRealAds(kind)) {
       showNativeAdThen(callback, opts);
       return;
@@ -3568,9 +3828,11 @@
   }
 
   function applyRevive() {
+    // Keeps score, pipes, pipesSpawned and speed (difficulty ramp is score/index based) — nothing reset.
     reviveUsedThisRun = true;
     reviveAvailable = false;
     state = STATE.PLAYING;
+    reviveHold = true; // bird hovers until the player taps (ad may have just closed)
     invulnFrames = REVIVE_INVULN_FRAMES;
     let targetY = H / 2 - 20;
     for (const p of pipes) {
@@ -3585,19 +3847,35 @@
     bird.rot = -0.35;
     flash = 8;
     overTimer = 0;
+    reviveHoldY = bird.y;
+    console.log("[ads] revive applied (score " + score + ", pipesSpawned " + pipesSpawned + ")");
     syncPromoVisibility();
     playSfx("ui");
     vibratePulse(15);
   }
 
   function offerRevive() {
-    if (!reviveAvailable || reviveUsedThisRun || adBlocking) return;
+    if (!reviveAvailable || reviveUsedThisRun || adBlocking || runRewardsSettled) return;
+    console.log("[ads] revive tapped (score " + score + ")");
+    const reviveOk = () => state === STATE.OVER && !reviveUsedThisRun && !runRewardsSettled;
     showAdThen(
       () => {
-        applyRevive();
+        if (reviveOk()) applyRevive();
       },
       {
         kind: "rewarded",
+        placement: "revive",
+        onNoAd: () => {
+          // Our ad had no fill / failed: don't punish the player.
+          if (!reviveOk()) return;
+          console.log("[ads] revive: no ad available -> free revive");
+          applyRevive();
+          showToast("No ad available right now - free revive!", 2800);
+        },
+        onDismissed: () => {
+          // Closed before the reward: no revive, but the button stays available.
+          showToast("Watch the full ad to revive", 2400);
+        },
         label: "Rewarded Ad",
         title: "Watch to Revive",
         subtitle: "Keep your score — one revive per run.",
@@ -3621,6 +3899,19 @@
       },
       {
         kind: "rewarded",
+        placement: "stardust",
+        onNoAd: () => {
+          // No reward and no daily view consumed on no fill.
+          showToast("No ad available right now, try again later", 2800);
+          if (typeof renderShop === "function" && shopModal && !shopModal.classList.contains("hidden")) {
+            renderShop();
+          }
+        },
+        onDismissed: () => {
+          if (typeof renderShop === "function" && shopModal && !shopModal.classList.contains("hidden")) {
+            renderShop();
+          }
+        },
         label: "Rewarded Ad",
         title: "Watch for Stardust",
         subtitle: "+" + REWARD_STARDUST_AMOUNT + " Stardust · " + rewardedStardustRemaining() + " left today after this",
@@ -3655,6 +3946,7 @@
     coinsEarnedThisRun = 0;
     stardustEarnedThisRun = 0;
     reviveUsedThisRun = false;
+    reviveHold = false;
     reviveAvailable = false;
     runRewardsSettled = false;
     invulnFrames = 0;
@@ -3728,6 +4020,10 @@
     if (state === STATE.READY) {
       tryStartPlay();
       if (state !== STATE.PLAYING) return;
+    }
+    if (reviveHold) {
+      reviveHold = false;
+      invulnFrames = REVIVE_INVULN_FRAMES;
     }
     bird.vy = FLAP;
     bird.wing = 8;
@@ -3813,6 +4109,16 @@
       for (let i = 0; i < trailPoints.length; i++) trailPoints[i].x -= pipeSpeed * 0.35;
       while (trailPoints.length > 2 && trailPoints[0].x < -40) trailPoints.shift();
       updateParticles();
+      return;
+    }
+
+    if (reviveHold) {
+      // Frozen after revive until the player taps: no pipe movement, no scoring, no collisions.
+      bird.vy = 0;
+      bird.y = reviveHoldY + Math.sin(frames * 0.08) * 6;
+      bird.rot = Math.sin(frames * 0.08) * 0.1;
+      updateParticles();
+      pushLightTrailPoint(trailPoints, bird.x - 6, bird.y, getEquippedTrail(), 2.2);
       return;
     }
 
@@ -3902,6 +4208,7 @@
 
     if (!reviveUsedThisRun) {
       reviveAvailable = true;
+      if (rewarded.status === "failed" || rewarded.status === "idle") preloadRewarded("game-over");
     } else {
       finalizeRunIfNeeded();
     }
@@ -4506,6 +4813,18 @@
       ctx.fillText(String(score), W / 2 + 2, 58 + 2);
       ctx.fillStyle = C.hud;
       ctx.fillText(String(score), W / 2, 58);
+    }
+
+    if (state === STATE.PLAYING && reviveHold) {
+      const pulse = 0.7 + Math.sin(frames * 0.12) * 0.3;
+      ctx.textAlign = "center";
+      ctx.globalAlpha = pulse;
+      ctx.font = "600 18px Segoe UI, system-ui, sans-serif";
+      ctx.fillStyle = C.hudShadow;
+      ctx.fillText("Revived! Tap to continue", W / 2 + 1, H * 0.72 + 1);
+      ctx.fillStyle = "#fff";
+      ctx.fillText("Revived! Tap to continue", W / 2, H * 0.72);
+      ctx.globalAlpha = 1;
     }
 
     if (state === STATE.READY) {

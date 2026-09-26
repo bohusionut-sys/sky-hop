@@ -1755,3 +1755,26 @@ body.capacitor .promo-banner {
 body.capacitor .update-banner {
   padding-top: max(6px, env(safe-area-inset-top, 0px));
 }
+
+/* --- Toast (ads fallback messages) --- */
+.sky-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18% + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  max-width: min(88vw, 360px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(20, 16, 40, 0.92);
+  color: #fff;
+  font: 600 14px "Segoe UI", system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(233, 196, 106, 0.45);
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sky-toast.hidden {
+  display: none;
+}
